@@ -179,8 +179,8 @@ Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso 
         *   **Origem do Tumor** (Ceco e Cólon Descendente).
         *   **Idade** (Fator de risco natural).
 
-    ![Importância das Features XGBoost](figures/xgboost_native_importance_gain_pt.png)
-    *Figura: Importância das variáveis baseada no Ganho de Informação (XGBoost). O modelo prioriza corretamente o estágio avançado e a idade.*
+    ![Importância das Features XGBoost](figures/xgboost_importancia_variaveis.png)
+    *Figura 5: Importância das variáveis baseada no Ganho de Informação (XGBoost). O modelo prioriza corretamente o estágio avançado e a idade.*
 
     *   A ausência de uma feature "mágica" confirma que o XGBoost aprendeu interações não-lineares genuínas entre estágio, idade e localização, maximizando a extração de sinal dos dados disponíveis.
 
@@ -191,7 +191,7 @@ Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso 
 Embora o XGBoost seja o nosso modelo de previsão definitivo, utilizamos o **Cox Proportional Hazards (CoxPH)** como uma ferramenta auxiliar de explicação devido à sua simplicidade estatística. O gráfico de "Hazard Ratios" (Razões de Risco) abaixo mostra o impacto de cada variável. Valores acima de 1 indicam um aumento no risco. Esta abordagem híbrida nos dá o melhor dos dois mundos: a precisão do XGBoost e a explicabilidade do CoxPH.
 
 ![Hazard Ratios](figures/razoes_risco_cox.png)
-*Figura 5: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
+*Figura 6: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
 
 **Validação Biológica:** Graças à etapa rigorosa de filtragem de dados, os fatores de risco identificados são consistentes com a literatura médica (estágio avançado como principal risco, estágio inicial como fator protetor). Artefatos encontrados em análises preliminares (como associações com tecidos não-cólon) foram eliminados, garantindo a confiabilidade clínica do modelo.
 
