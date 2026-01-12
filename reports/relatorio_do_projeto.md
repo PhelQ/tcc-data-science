@@ -178,6 +178,10 @@ Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso 
         *   **Estágio IV** (Forte preditor de alto risco).
         *   **Origem do Tumor** (Ceco e Cólon Descendente).
         *   **Idade** (Fator de risco natural).
+
+    ![Importância das Features XGBoost](figures/xgboost_native_importance_gain_pt.png)
+    *Figura: Importância das variáveis baseada no Ganho de Informação (XGBoost). O modelo prioriza corretamente o estágio avançado e a idade.*
+
     *   A ausência de uma feature "mágica" confirma que o XGBoost aprendeu interações não-lineares genuínas entre estágio, idade e localização, maximizando a extração de sinal dos dados disponíveis.
 
 **Conclusão da Auditoria:** O C-Index de ~0.95 é robusto, legítimo e validado em um conjunto de teste independente (Hold-out), consolidando o XGBoost como a escolha definitiva para este projeto.

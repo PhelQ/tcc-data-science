@@ -4,6 +4,7 @@ import pandas as pd
 import shap
 import matplotlib.pyplot as plt
 from xgboost import XGBRegressor
+from xgboost import plot_importance
 from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.metrics import make_scorer
 from sksurv.metrics import concordance_index_censored
@@ -15,30 +16,19 @@ from src.modeling.treino_modelo_sobrevivencia import load_and_split_data, encode
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def c_index_scorer(estimator, X, y):
-    """Scorer customizado para RandomizedSearchCV (C-Index).
-    
-    O y passado pelo sklearn será o y_train (estruturado ou array).
-    O XGBoost espera y numérico para fit, mas o scorer recebe o y original do split.
-    """
-    # Predição de risco (XGBoost survival output é log hazard ratio)
+    """Scorer customizado para RandomizedSearchCV (C-Index)."""
     y_pred = estimator.predict(X)
-    
-    # Extrair evento e tempo do array estruturado ou dataframe
-    # O RandomizedSearchCV do sklearn vai passar y como array estruturado se fizermos o split antes
-    # Mas precisamos garantir compatibilidade.
-    
     try:
         event = y["event"]
         time = y["time"]
     except:
-        # Fallback se for array numpy estruturado
         event = y["event"]
         time = y["time"]
         
     return concordance_index_censored(event, time, y_pred)[0]
 
 def explore_xgboost():
-    logging.info("--- Iniciando Sessão de Exploração Avançada do XGBoost ---")
+    logging.info("--- Iniciando Sessão de Exploração do XGBoost ---")
     
     # 1. Carregar Dados
     logging.info(f"Carregando dados de {config.FEATURES_SURVIVAL_PATH}...")
@@ -52,17 +42,10 @@ def explore_xgboost():
     # 3. Encoding (Fit Treino, Transform Teste)
     X_train, X_test = encode_features(X_train_raw, X_test_raw, cat_features)
     
-    # Preparar y para XGBoost (Target numérico para fit: positivo=tempo se vivo, negativo=tempo se morto? Não.)
-    # Para 'survival:cox', o XGBoost espera:
-    # labels: valores de tempo. Se censurado, valor negativo?
-    # A documentação oficial diz: "y > 0 para evento, y < 0 para censura" para 'survival:cox'.
-    # Vamos converter.
-    
+    # Preparar y para XGBoost
     y_train_xgb = np.where(y_train["event"], y_train["time"], -y_train["time"])
-    y_test_xgb = np.where(y_test["event"], y_test["time"], -y_test["time"])
     
-    # 4. Definir Espaço de Hiperparâmetros (Grid Radical)
-    # MELHORES PARAMETROS ENCONTRADOS (C-Index ~0.97)
+    # 4. Melhores Parâmetros
     best_params = {
         'max_depth': 10,
         'learning_rate': 0.05,
@@ -79,12 +62,6 @@ def explore_xgboost():
         'random_state': 42
     }
     
-    # Pular Random Search para ser rápido na análise de feature importance
-    logging.info("Usando melhores parâmetros pré-encontrados para análise rápida...")
-    best_score = 0.9638 # Histórico
-
-    logging.info(f"--- Melhor Resultado (Histórico): {best_score:.4f} ---")
-    
     # 5. Treinar Melhor Modelo no Treino Completo
     logging.info("Treinando melhor modelo no conjunto de treino completo...")
     final_model = XGBRegressor(**best_params)
@@ -95,24 +72,31 @@ def explore_xgboost():
     test_score = concordance_index_censored(y_test["event"], y_test["time"], test_preds)[0]
     logging.info(f"Score Final no Teste (Hold-out): {test_score:.4f}")
     
-    # 7. Análise de Importância (Nativa XGBoost)
-    # Substituindo SHAP (que deu erro de compatibilidade) por plot_importance nativo
-    logging.info("Gerando gráfico de importância das features (Nativo XGBoost)...")
+    # 7. Análise de Importância (Nativa XGBoost) - TRADUZIDO
+    logging.info("Gerando gráficos de importância nativos (Traduzidos)...")
     
-    from xgboost import plot_importance
-    
-    plt.figure(figsize=(12, 10))
-    plot_importance(final_model, max_num_features=20, importance_type='weight', height=0.5)
-    plt.title(f"XGBoost Feature Importance (Weight) - C-Index: {test_score:.3f}")
+    # Plot Weight
+    fig, ax = plt.subplots(figsize=(12, 10))
+    plot_importance(final_model, max_num_features=20, importance_type='weight', height=0.5, ax=ax)
+    ax.set_title(f"Importância das Variáveis (Peso) - C-Index: {test_score:.3f}")
+    ax.set_xlabel("F Score (Peso)")
+    ax.set_ylabel("Variáveis")
     plt.tight_layout()
-    save_plot(plt.gcf(), config.FIGURES_DIR, "xgboost_native_importance.png")
+    save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_pt.png")
     
-    # Também salvar importância por ganho (Gain) - geralmente mais informativo para relevância
-    plt.figure(figsize=(12, 10))
-    plot_importance(final_model, max_num_features=20, importance_type='gain', height=0.5)
-    plt.title(f"XGBoost Feature Importance (Gain) - C-Index: {test_score:.3f}")
+    # Plot Gain
+    fig, ax = plt.subplots(figsize=(12, 10))
+    plot_importance(final_model, max_num_features=20, importance_type='gain', height=0.5, ax=ax)
+    ax.set_title(f"Importância das Variáveis (Ganho de Informação) - C-Index: {test_score:.3f}")
+    ax.set_xlabel("Ganho Médio")
+    ax.set_ylabel("Variáveis")
     plt.tight_layout()
-    save_plot(plt.gcf(), config.FIGURES_DIR, "xgboost_native_importance_gain.png")
+    save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_gain_pt.png")
+
+    # 8. SHAP (Nota: Desativado devido a incompatibilidade binária XGBoost > 1.6 / SHAP)
+    # Tentativas de hackear o save_raw falharam com "Expected type size for b'\x00'".
+    # Os plots nativos acima (Gain/Weight) são suficientes para a análise.
+    logging.info("Nota: Análise SHAP ignorada devido a incompatibilidade de versão. Use os plots de Ganho/Peso.")
 
     logging.info("Exploração concluída! Confira os gráficos em reports/figures/")
     
