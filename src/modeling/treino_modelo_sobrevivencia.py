@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 from lifelines import CoxPHFitter
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from sksurv.ensemble import RandomSurvivalForest
 from sksurv.metrics import concordance_index_censored
 from xgboost import XGBRegressor
@@ -155,8 +155,34 @@ def main():
     """Função principal para executar o pipeline de treinamento e avaliação."""
     logging.info("Iniciando o pipeline de treinamento de modelos de sobrevivência...")
     
+    # 1. Carregar e pré-processar todos os dados
     X, y = load_and_preprocess_data(config.FEATURES_SURVIVAL_PATH)
-    results = cross_validate_models(X, y)
+    
+    # 2. Dividir em Treino (80%) e Teste (20%)
+    # Usamos random_state fixo para reprodutibilidade
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, random_state=42, stratify=y["event"]
+    )
+    
+    logging.info(f"Dados divididos: Treino={len(X_train)}, Teste={len(X_test)}")
+    
+    # 3. Salvar os conjuntos de dados divididos para uso posterior (ex: visualização)
+    # Reconstruímos o DataFrame incluindo as colunas alvo para salvar
+    train_df = X_train.copy()
+    train_df["event_occurred"] = y_train["event"]
+    train_df["observed_time"] = y_train["time"]
+    save_data(train_df, config.TRAIN_DATA_PATH)
+    
+    test_df = X_test.copy()
+    test_df["event_occurred"] = y_test["event"]
+    test_df["observed_time"] = y_test["time"]
+    save_data(test_df, config.TEST_DATA_PATH)
+    
+    logging.info(f"Dados de treino salvos em: {config.TRAIN_DATA_PATH}")
+    logging.info(f"Dados de teste salvos em: {config.TEST_DATA_PATH}")
+
+    # 4. Avaliar modelos APENAS nos dados de Treino (Cross-Validation interna)
+    results = cross_validate_models(X_train, y_train)
 
     if not results:
         logging.warning("Nenhum modelo foi avaliado com sucesso. Encerrando o pipeline.")
@@ -168,7 +194,7 @@ def main():
     best_model_name = results_df.loc[results_df["mean_c_index"].idxmax()]["model_name"]
     best_c_index = results_df["mean_c_index"].max()
 
-    logging.info("--- Resultados da Avaliação do Modelo (Validação Cruzada) ---")
+    logging.info("--- Resultados da Avaliação do Modelo (Validação Cruzada no Treino) ---")
     for _, row in results_df.iterrows():
         logging.info(
             f"  - {row['model_name']}: C-Index Médio: {row['mean_c_index']:.4f} "
@@ -180,9 +206,12 @@ def main():
     logging.info(f"Resultados da avaliação salvos em: {results_path}")
 
     logging.info(f"Melhor modelo selecionado: {best_model_name} (C-Index: {best_c_index:.4f})")
-    train_and_save_models(X, y, best_model_name)
+    
+    # 5. Treinar o modelo final com TODOS os dados de TREINO
+    train_and_save_models(X_train, y_train, best_model_name)
 
-    save_model(list(X.columns), config.TRAINING_COLUMNS_PATH)
+    # Salvar as colunas usadas no treinamento para garantir alinhamento futuro
+    save_model(list(X_train.columns), config.TRAINING_COLUMNS_PATH)
     logging.info(f"Colunas de treinamento salvas em: {config.TRAINING_COLUMNS_PATH}")
     logging.info("Pipeline de treinamento de modelos de sobrevivência concluído!")
 

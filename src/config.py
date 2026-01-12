@@ -47,6 +47,12 @@ FEATURES_FINAL_PATH = os.path.join(
 FEATURES_SURVIVAL_PATH = os.path.join(
     PROCESSED_DATA_DIR, 'tcga_coad_features_survival.parquet'
 )
+TRAIN_DATA_PATH = os.path.join(
+    PROCESSED_DATA_DIR, 'tcga_coad_train.parquet'
+)
+TEST_DATA_PATH = os.path.join(
+    PROCESSED_DATA_DIR, 'tcga_coad_test.parquet'
+)
 
 # Caminhos para modelos
 COXPH_MODEL_PATH = os.path.join(MODELS_DIR, 'coxph_model.joblib')
