@@ -10,6 +10,25 @@ Através de um pipeline de dados modular, realizamos desde a coleta e limpeza do
 
 ## 2. Metodologia e Estrutura do Projeto
 
+### Origem e Composição dos Dados
+
+Os dados utilizados neste estudo provêm do **The Cancer Genome Atlas (TCGA)**, especificamente da coorte de Adenocarcinoma de Cólon (**TCGA-COAD**), acessados através do *GDC Data Portal* (Genomic Data Commons).
+
+Para construir uma visão completa de cada paciente, integramos dois datasets primários distintos:
+
+1.  **Dados Clínicos (`clinical.tsv`):**
+    *   Contém informações demográficas (idade, gênero, etnia), dados vitais (status vivo/morto, dias até o óbito) e patológicos (estágio do tumor AJCC, diagnósticos primários).
+    *   *Função:* Fornecer as variáveis preditoras (features) e as variáveis alvo de sobrevivência (tempo e evento).
+
+2.  **Dados de Bioespécimes (`sample.tsv`):**
+    *   Contém detalhes físicos sobre as amostras biológicas coletadas (tipo de tecido, local anatômico da coleta, IDs das amostras).
+    *   *Função:* Permitir a filtragem rigorosa para garantir que a análise considere apenas tecidos tumorais primários de cólon, excluindo tecidos normais adjacentes ou metástases que poderiam enviesar o modelo.
+
+**Estratégia de Fusão (Consolidação):**
+A unificação desses universos foi realizada através de um *Inner Join* utilizando o identificador único do paciente (`cases.submitter_id`). Esta abordagem conservadora garante que apenas pacientes que possuem **ambos** os registros (clínico e de biópsia) completos sejam incluídos no estudo, maximizando a integridade dos dados.
+
+### Arquitetura do Pipeline
+
 O projeto foi estruturado em uma série de scripts Python modulares, garantindo a reprodutibilidade e a clareza do processo. O pipeline completo é orquestrado pelo script `src/main.py` e segue as seguintes etapas:
 
 ### Etapa 1: Consolidação e Pré-processamento dos Dados
