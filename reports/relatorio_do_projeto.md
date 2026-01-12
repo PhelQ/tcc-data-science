@@ -201,19 +201,13 @@ A análise confirmou o **estadiamento patológico AJCC** como o fator predominan
 *   **Junção Retossigmoide (HR ≈ 2.18):** Uma observação interessante deste dataset específico é o elevado risco associado a tumores na junção retossigmoide. Embora seu valor numérico de HR seja ligeiramente superior ao do Estágio IV neste modelo, isso pode refletir características específicas da amostra ou diagnósticos mais tardios nesta região anatômica.
 *   **Idade Avançada (80-100 anos):** A idade avançada apresenta um aumento de risco consistente de **44%** (HR ≈ 1.44), refletindo a fragilidade natural e comorbidades associadas ao envelhecimento.
 
+**Fatores Protetores (Hazard Ratio < 1):**
+
+*   **Estágios Iniciais:** Estágios como **I** (HR ≈ 0.52) e **IIA** (HR ≈ 0.61) atuam como fortes fatores de proteção, reduzindo o risco de morte pela metade ou mais.
+*   **Localização Anatômica:** Tumores na **Flexura Hepática** (HR ≈ 0.41) e **Cólon Sigmoide** (HR ≈ 0.62) mostraram-se associados a melhores prognósticos neste conjunto de dados.
+
 ![Hazard Ratios](figures/razoes_risco_cox.png)
 *Figura 6: Impacto das variáveis na sobrevivência (Hazard Ratios) segundo o modelo CoxPH.*
-
-A **Figura 6** detalha os fatores que aumentam (vermelho) ou diminuem (verde) o risco de mortalidade:
-
-*   **Fatores de Alto Risco (Hazard Ratio > 1):**
-    *   **Estágio IV (HR ≈ 1.91) e IVA (HR ≈ 1.41):** Confirmando a gravidade da doença metastática, o Estágio IV se consolida como um determinante crítico de mortalidade. Pacientes neste estágio apresentam quase o dobro do risco de óbito em comparação à média.
-    *   **Junção Retossigmoide (HR ≈ 2.18):** Neste conjunto de dados, tumores nesta localização específica apresentaram um risco extremamente elevado, superando estatisticamente até mesmo o estadiamento geral, o que pode indicar um perfil biológico mais agressivo ou diagnósticos mais tardios nesta região anatômica.
-    *   **Idade Avançada (80-100 anos):** Apresenta um aumento de risco de **43%** (HR ≈ 1.44), consistente com a fragilidade natural e comorbidades esperadas nesta faixa etária.
-
-*   **Fatores Protetores (Hazard Ratio < 1):**
-    *   **Estágios Iniciais:** Estágios como **I** (HR ≈ 0.52) e **IIA** (HR ≈ 0.61) atuam como fortes fatores de proteção, reduzindo o risco de morte pela metade ou mais.
-    *   **Localização Anatômica:** Tumores na **Flexura Hepática** (HR ≈ 0.41) e **Cólon Sigmoide** (HR ≈ 0.62) mostraram-se associados a melhores prognósticos neste conjunto de dados.
 
 ### 4.5 Estratificação de Risco
 
