@@ -45,38 +45,51 @@ def _clean_feature_names(feature_names: pd.Index) -> list:
 
 def plot_hazard_ratios(hazard_ratios: pd.DataFrame, output_path: str) -> None:
     """Plota as 20 features mais importantes com base nos Hazard Ratios."""
-    top_features = hazard_ratios.head(20)
+    import matplotlib.ticker as ticker
+
+    top_features = hazard_ratios.head(20).copy()
     cleaned_labels = _clean_feature_names(top_features.index)
+    top_features["Feature Name"] = cleaned_labels
+    
+    # Define cor baseada no risco
+    top_features["Tipo de Efeito"] = top_features["Hazard Ratio"].apply(
+        lambda x: "Fator de Risco (Piora)" if x > 1 else "Fator Protetor (Melhora)"
+    )
 
     plt.style.use("seaborn-v0_8-whitegrid")
     fig, ax = plt.subplots(figsize=(12, 10))
 
-    colors = ["#3498db" if hr < 1 else "#e74c3c" for hr in top_features["Hazard Ratio"]]
-
+    # Plot usando hue para cores automáticas e legenda correta
     sns.barplot(
-        x=top_features["Hazard Ratio"],
-        y=cleaned_labels,
-        palette=colors,
+        data=top_features,
+        x="Hazard Ratio",
+        y="Feature Name",
+        hue="Tipo de Efeito",
+        palette={"Fator de Risco (Piora)": "#e74c3c", "Fator Protetor (Melhora)": "#2ecc71"},
         ax=ax,
-        orient="h",
+        dodge=False 
     )
 
-    ax.axvline(x=1, color="black", linestyle="--", linewidth=1.5)
+    # Linha de referência em 1
+    ax.axvline(x=1, color="black", linestyle="--", linewidth=1.5, alpha=0.7)
+    
+    # Escala logarítmica para simetria visual (0.5 vs 2.0)
+    ax.set_xscale("log")
+    
+    # Ajustar ticks do eixo X para serem legíveis
+    ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax.xaxis.set_minor_formatter(ticker.ScalarFormatter())
 
     ax.set_title(
-        "Top 20 Fatores de Risco - Modelo CoxPH",
+        "Impacto das Variáveis na Sobrevivência (Hazard Ratios)",
         fontsize=16,
         fontweight="bold",
     )
-    ax.set_xlabel("Hazard Ratio (Razão de Risco)", fontsize=12)
-    ax.set_ylabel("Variável", fontsize=12)
-
-    legend_handles = [
-        plt.Rectangle((0, 0), 1, 1, color="#3498db", label="Fator Protetor (HR < 1)"),
-        plt.Rectangle((0, 0), 1, 1, color="#e74c3c", label="Fator de Risco (HR > 1)"),
-        plt.Line2D([], [], color='black', linestyle='--', label='Sem Efeito (HR=1)')
-    ]
-    ax.legend(handles=legend_handles, loc="best")
+    ax.set_xlabel("Hazard Ratio (Escala Log)\n< 1: Reduz Risco (Melhor) | > 1: Aumenta Risco (Pior)", fontsize=12)
+    ax.set_ylabel("", fontsize=12)
+    
+    # Move a legenda para não cobrir dados
+    ax.legend(title="Interpretação", loc="lower right")
 
     plt.tight_layout()
     save_plot(fig, config.FIGURES_DIR, "razoes_risco_cox.png")
