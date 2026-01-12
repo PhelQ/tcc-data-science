@@ -10,7 +10,7 @@ import seaborn as sns
 
 from src import config
 from src.utils import load_data, save_plot, load_model
-from src.modeling.predict_survival_time import align_columns
+from src.modeling.predicao_tempodevida import align_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

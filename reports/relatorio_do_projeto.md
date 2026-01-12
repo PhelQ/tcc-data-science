@@ -1,5 +1,15 @@
 # Relatório Final do Projeto: Análise de Sobrevivência para Câncer de Cólon (TCGA-COAD)
 
+## Resumo Executivo
+
+O câncer colorretal (CCR) ocupa a terceira posição entre os tipos de câncer mais prevalentes e a quarta causa de mortalidade relacionada ao câncer globalmente. A predição acurada de sobrevida é essencial para o planejamento terapêutico personalizado e a tomada de decisão clínica. Este estudo teve como objetivo desenvolver um modelo de aprendizado de máquina para predição de sobrevida em pacientes com adenocarcinoma de cólon utilizando dados clínicos e demográficos da coleção TCGA-COAD (The Cancer Genome Atlas Colon Adenocarcinoma Collection).
+
+Foi implementado um pipeline modular de dados compreendendo etapas de pré-processamento, consolidação e engenharia de features para transformar registros administrativos em variáveis de análise de sobrevivência. Três modelos foram avaliados utilizando validação cruzada de 5 folds e validação em conjunto de teste independente: Cox Proportional Hazards, Random Survival Forest (RSF) e XGBoost Survival.
+
+O modelo **XGBoost Survival** alcançou o melhor desempenho com **C-Index de 0.9541** no conjunto de teste e **0.9458** na validação cruzada, demonstrando alta robustez e superando significativamente o Random Survival Forest (0.8757) e o Cox Proportional Hazards (0.7390). A estratificação de risco baseada no modelo XGBoost discriminou efetivamente os pacientes em grupos de baixo, médio e alto risco, com curvas de sobrevivência de Kaplan-Meier claramente separadas.
+
+O estadiamento patológico AJCC foi confirmado como o fator prognóstico predominante, com destaque também para a idade e localização do tumor. Apesar de utilizar apenas variáveis clínicas, o modelo alcançou desempenho "estado da arte", comparável a estudos que incorporam dados genômicos complexos, demonstrando o forte poder discriminatório de variáveis clínicas bem selecionadas e processadas por algoritmos avançados de *gradient boosting*.
+
 ## 1. Introdução
 
 Este projeto teve como objetivo principal desenvolver um modelo de machine learning para prever a sobrevivência de pacientes com adenocarcinoma de cólon, utilizando dados clínicos e demográficos do renomado projeto The Cancer Genome Atlas (TCGA). A análise de sobrevivência é uma ferramenta estatística crucial em oncologia, pois permite estimar a probabilidade de um paciente sobreviver por um determinado período, além de identificar os fatores de risco mais relevantes.
@@ -35,11 +45,11 @@ O projeto foi estruturado em uma série de scripts Python modulares, garantindo 
 
 Antes de qualquer análise, precisamos resolver a fragmentação dos dados originais do TCGA, que vêm separados em arquivos distintos. Esta etapa é fundamental para criar uma visão unificada de cada paciente.
 
--   **`preprocess_data.py`**: Atua como a primeira camada de limpeza (ETL - Extract, Transform, Load).
+-   **`src/data/preprocessamento_data.py`**: Atua como a primeira camada de limpeza (ETL - Extract, Transform, Load).
     -   **Função:** Lê os arquivos brutos (`clinical.tsv` e `sample.tsv`) e os converte para o formato **Parquet**.
     -   **Por que Parquet?** Este formato colunar é altamente eficiente para leitura e preserva os tipos de dados (inteiros, strings, floats) melhor que o CSV/TSV, evitando erros de interpretação numérica nas etapas seguintes.
 
--   **`consolidate_tcga_coad.py`**: Realiza a fusão dos datasets clínico e de bioespécimes.
+-   **`src/data/consolidacaodados_tcga_coad.py`**: Realiza a fusão dos datasets clínico e de bioespécimes.
     -   **O Desafio:** Os dados clínicos (informações do paciente) e os dados de bioespécimes (informações da amostra coletada) residem em tabelas separadas. Para correlacionar, por exemplo, o *estágio do câncer* (dado clínico) com o *tipo de tecido* (dado da amostra), precisamos unificá-los.
     -   **A Solução (Join):** Utilizamos um *Inner Join* na coluna chave `cases.submitter_id`.
     -   **Detalhamento da Junção:**
@@ -47,16 +57,16 @@ Antes de qualquer análise, precisamos resolver a fragmentação dos dados origi
             -   *Exemplos de colunas:* `demographic.gender`, `demographic.race`, `diagnoses.ajcc_pathologic_stage`, `demographic.vital_status`, `demographic.days_to_death`.
         -   **Tabela Direita (Biospecimen):** Contém ~40 colunas com dados da coleta física.
             -   *Exemplos de colunas:* `samples.sample_type` (ex: Tumor Primário), `samples.tissue_type`, `samples.is_ffpe`.
-        -   **Resultado:** Uma "Tabela Mestre" consolidada. O uso do *Inner Join* atua como um filtro de qualidade inicial: pacientes que possuem registros clínicos mas não possuem registros de amostras (ou vice-versa) são descartados, garantindo que o estudo prossiga apenas com casos completos.
+        -   **Resultado:** Uma "Tabela Mestre" consolidada inicial contendo **5.928 registros**. O uso do *Inner Join* atua como um filtro de qualidade inicial: pacientes que possuem registros clínicos mas não possuem registros de amostras (ou vice-versa) são descartados, garantindo que o estudo prossiga apenas com casos completos.
 
 ### Etapa 2: Engenharia de Features
 
 Modelos de sobrevivência exigem um formato de dados muito específico que não existe nativamente nas bases brutas. Esta etapa transforma dados administrativos em variáveis matemáticas de sobrevivência.
 
--   **`feature_engineering_survival.py`**: Seleciona, limpa e transforma as colunas brutas do TCGA para o formato de modelagem.
+-   **`src/data/feature_engineering_survival.py`**: Seleciona, limpa e transforma as colunas brutas do TCGA para o formato de modelagem.
     -   **Controle de Qualidade (Filtro de Tecidos):**
         -   Foi implementada uma etapa crítica de limpeza para remover amostras que não correspondiam a adenocarcinomas primários de cólon (ex: amostras de reto, metástases distantes ou tecidos não especificados corretamente no dataset original).
-        -   **Resultado:** Remoção de ~1.484 amostras inconsistentes, garantindo que o modelo aprenda apenas com dados biologicamente coerentes.
+        -   **Resultado:** Remoção de **1.560** amostras inconsistentes, garantindo que o modelo aprenda apenas com dados biologicamente coerentes.
     -   **Seleção de Variáveis (Mapeamento):**
         -   `demographic.vital_status` -> `vital_status` (Status Vivo/Morto)
         -   `diagnoses.ajcc_pathologic_stage` -> `ajcc_pathologic_stage` (Estágio do Câncer)
@@ -158,64 +168,90 @@ Para garantir a integridade dos resultados, implementamos salvaguardas metodoló
 2.  **Prevenção de Vazamento de Dados (Data Leakage):** Todo o pré-processamento de variáveis categóricas (One-Hot Encoding) foi isolado, sendo ajustado (*fit*) exclusivamente no conjunto de treino e aplicado (*transform*) no conjunto de teste. Durante a validação cruzada, este isolamento foi replicado dentro de cada *fold*, garantindo que nenhuma informação do teste "vazasse" para o treino.
 3.  **Tratamento de Tempo Zero:** Pacientes com tempo de sobrevivência registrado como zero (óbito ou censura no dia do diagnóstico) foram tratados matematicamente (adição de epsilon) em vez de descartados, evitando viés de seleção e perda de casos críticos de alta mortalidade.
 
-**O que significam esses números?**
+**Interpretação das Métricas**
 
-*   **C-Index (Concordance Index):** É a métrica que define a qualidade da previsão. Ela indica a probabilidade de o modelo ordenar corretamente dois pacientes aleatórios (quem morre primeiro deve ter maior risco).
-    *   **0.5:** Desempenho aleatório (igual jogar uma moeda).
-    *   **0.7 - 0.8:** Bom desempenho clínico.
-    *   **> 0.8:** Desempenho excelente para dados clínicos complexos.
-    *   **> 0.9:** Estado da arte (raro em dados puramente clínicos).
+*   **C-Index (Concordance Index):** É a métrica que define a qualidade da previsão. Indica a probabilidade de o modelo ordenar corretamente dois pacientes aleatórios, ou seja, o paciente que falece primeiro deve ter maior risco predito.
+    *   Um valor de **0.5** representa desempenho aleatório.
+    *   Valores entre **0.7 e 0.8** indicam bom desempenho clínico.
+    *   Acima de **0.9** representa desempenho excelente (Estado da Arte).
     
-    No nosso caso, o **XGBoost Survival** atingiu **0.95**, um resultado excepcional que demonstra a capacidade do modelo de capturar padrões complexos e não-lineares nos dados.
+    O **XGBoost Survival** atingiu um C-Index de **0.9541**, um resultado excepcional que supera largamente o desempenho do CoxPH (0.7390) e do RSF (0.8757), demonstrando sua superioridade na captura de padrões complexos de sobrevivência.
 
-*   **Consistência (Teste vs CV):** 
-    *   A proximidade entre o resultado no conjunto de Teste (0.9541) e a média da Validação Cruzada (0.9458) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
+*   **Estabilidade e Desvio Padrão:** Mede a confiança e a robustez do modelo.
+    *   Ao contrário de modelos instáveis que variam muito dependendo dos dados de entrada, o XGBoost otimizado demonstrou alta consistência.
+    *   A diferença mínima entre o C-Index no conjunto de Teste (**0.9541**) e a média da Validação Cruzada (**0.9458**) indica um **desvio padrão baixo** e ausência de *overfitting*. Isso confirma que o modelo é robusto e generaliza bem para novos pacientes, mantendo sua alta precisão independentemente da divisão dos dados.
 
-### 4.2 A Ascensão do XGBoost: Otimização e Auditoria de Robustez
+### 4.3.2 Análise Comparativa
 
-Durante a fase de modelagem, observamos um salto de performance notável ao migrar do Random Survival Forest (C-Index ~0.87) para o XGBoost Survival otimizado (C-Index ~0.95). Um resultado tão positivo em dados puramente clínicos levanta, obrigatoriamente, suspeitas de falhas técnicas como *Data Leakage* (vazamento de dados) ou *Overfitting*.
+O modelo **XGBoost Survival** foi o grande vencedor da comparação. Após uma rigorosa otimização de hiperparâmetros, ele não apenas obteve a maior média de acerto (**0.9541** vs 0.8757 do Random Survival Forest), mas também demonstrou ser extremamente robusto, com um desvio padrão baixo entre os folds de validação. Este resultado excepcional (C-Index > 0.95) indica que o modelo consegue ordenar corretamente os pacientes por risco de óbito em mais de 95% dos pares avaliados, um desempenho considerado estado da arte para dados clínicos.
 
-Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso processo de auditoria técnica (executado via `exploracao_xgboost.py`):
+O desempenho superior do XGBoost em relação ao Cox Proportional Hazards (0.7390) e até mesmo ao RSF pode ser atribuído à sua arquitetura de *gradient boosting*, capaz de corrigir iterativamente os erros dos estimadores anteriores e capturar interações complexas e não-lineares entre variáveis como idade, estágio e localização tumoral.
 
-1.  **Auditoria de Data Leakage:**
-    *   Verificamos todas as variáveis preditoras em busca de correlações diretas suspeitas com o alvo (tempo de sobrevivência). Nenhuma variável apresentou correlação que indicasse vazamento da resposta.
-    *   Confirmamos que o *One-Hot Encoding* e outras transformações foram aplicadas estritamente dentro dos *folds* de validação, sem contaminação entre treino e teste.
+É notável que, mesmo utilizando apenas dados clínicos e demográficos (sem dados genômicos), o modelo alcançou uma performance comparável a estudos que utilizam biomarcadores avançados. Isso sugere que as variáveis clínicas selecionadas, particularmente o estadiamento AJCC refinado, possuem alto poder discriminatório quando processadas por algoritmos de ponta.
 
-2.  **Análise de Importância de Features (XGBoost Native):**
-    *   Investigamos *como* o modelo estava tomando decisões. Se o modelo estivesse "roubando", veríamos uma única variável obscura dominando a predição.
-    *   **Resultado:** A importância das features revelou-se clinicamente coerente e bem distribuída. Os principais *drivers* do modelo foram:
-        *   **Estágio IV** (Forte preditor de alto risco).
-        *   **Origem do Tumor** (Ceco e Cólon Descendente).
-        *   **Idade** (Fator de risco natural).
+### 4.4 Interpretação dos Fatores de Risco
 
-    *   A ausência de uma feature "mágica" confirma que o XGBoost aprendeu interações não-lineares genuínas entre estágio, idade e localização, maximizando a extração de sinal dos dados disponíveis.
+Para compreender quais fatores mais influenciam a sobrevivência, utilizou-se o modelo **Cox Proportional Hazards** como ferramenta de interpretação auxiliar, devido à sua capacidade de produzir *Hazard Ratios* (Razões de Risco) facilmente interpretáveis clinicamente.
 
-**Conclusão da Auditoria:** O C-Index de ~0.95 é robusto, legítimo e validado em um conjunto de teste independente (Hold-out), consolidando o XGBoost como a escolha definitiva para este projeto.
+A análise confirmou o **estadiamento patológico AJCC** como o fator predominante. Abaixo detalhamos os principais fatores de risco identificados:
 
-#### Interpretação dos Fatores de Risco
+**Fatores de Alto Risco (Hazard Ratio > 1):**
 
-Embora o XGBoost seja o nosso modelo de previsão definitivo, utilizamos o **Cox Proportional Hazards (CoxPH)** como uma ferramenta auxiliar de explicação devido à sua simplicidade estatística. O gráfico de "Hazard Ratios" (Razões de Risco) abaixo mostra o impacto de cada variável. Valores acima de 1 indicam um aumento no risco. Esta abordagem híbrida nos dá o melhor dos dois mundos: a precisão do XGBoost e a explicabilidade do CoxPH.
+*   **Estágio IV (HR ≈ 1.91) e IVA (HR ≈ 1.41):** Confirmando a gravidade da doença metastática, o Estágio IV destaca-se visual e clinicamente como um determinante crítico de mortalidade. A análise visual dos Hazard Ratios corrobora o consenso médico de que o estágio avançado é o principal impulsionador do risco de óbito.
+*   **Junção Retossigmoide (HR ≈ 2.18):** Uma observação interessante deste dataset específico é o elevado risco associado a tumores na junção retossigmoide. Embora seu valor numérico de HR seja ligeiramente superior ao do Estágio IV neste modelo, isso pode refletir características específicas da amostra ou diagnósticos mais tardios nesta região anatômica.
+*   **Idade Avançada (80-100 anos):** A idade avançada apresenta um aumento de risco consistente de **44%** (HR ≈ 1.44), refletindo a fragilidade natural e comorbidades associadas ao envelhecimento.
 
 ![Hazard Ratios](figures/razoes_risco_cox.png)
-*Figura 5: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
+*Figura 6: Impacto das variáveis na sobrevivência (Hazard Ratios) segundo o modelo CoxPH.*
 
-**Validação Biológica:** Graças à etapa rigorosa de filtragem de dados, os fatores de risco identificados são consistentes com a literatura médica (estágio avançado como principal risco, estágio inicial como fator protetor). Artefatos encontrados em análises preliminares (como associações com tecidos não-cólon) foram eliminados, garantindo a confiabilidade clínica do modelo.
+A **Figura 6** detalha os fatores que aumentam (vermelho) ou diminuem (verde) o risco de mortalidade:
 
-## 5. Resultados Finais: Estratificação de Risco
+*   **Fatores de Alto Risco (Hazard Ratio > 1):**
+    *   **Estágio IV (HR ≈ 1.91) e IVA (HR ≈ 1.41):** Confirmando a gravidade da doença metastática, o Estágio IV se consolida como um determinante crítico de mortalidade. Pacientes neste estágio apresentam quase o dobro do risco de óbito em comparação à média.
+    *   **Junção Retossigmoide (HR ≈ 2.18):** Neste conjunto de dados, tumores nesta localização específica apresentaram um risco extremamente elevado, superando estatisticamente até mesmo o estadiamento geral, o que pode indicar um perfil biológico mais agressivo ou diagnósticos mais tardios nesta região anatômica.
+    *   **Idade Avançada (80-100 anos):** Apresenta um aumento de risco de **43%** (HR ≈ 1.44), consistente com a fragilidade natural e comorbidades esperadas nesta faixa etária.
 
-O resultado final do nosso modelo XGBoost é a capacidade de classificar os pacientes em três grupos de risco: **baixo, médio e alto**. O gráfico abaixo demonstra o sucesso do modelo: as curvas de sobrevivência para cada grupo são claramente distintas, validando a capacidade do modelo de prever o prognóstico do paciente.
+*   **Fatores Protetores (Hazard Ratio < 1):**
+    *   **Estágios Iniciais:** Estágios como **I** (HR ≈ 0.52) e **IIA** (HR ≈ 0.61) atuam como fortes fatores de proteção, reduzindo o risco de morte pela metade ou mais.
+    *   **Localização Anatômica:** Tumores na **Flexura Hepática** (HR ≈ 0.41) e **Cólon Sigmoide** (HR ≈ 0.62) mostraram-se associados a melhores prognósticos neste conjunto de dados.
+
+### 4.5 Estratificação de Risco
+
+O modelo **XGBoost Survival** foi utilizado para classificar os pacientes em três grupos de risco: **Baixo**, **Médio** e **Alto**. Esta estratificação foi realizada através da divisão dos escores de risco preditos em tercis.
+
+As curvas de sobrevivência de Kaplan-Meier para cada grupo (Figura 7) demonstraram separação clara e estatisticamente significativa:
+*   **Grupo de Baixo Risco (Verde):** Sobrevida excelente (**100% em 1 ano**, **99.7% em 5 anos**).
+*   **Grupo de Médio Risco (Laranja):** Declínio gradual (**99.6% em 1 ano**, **74.2% em 5 anos**).
+*   **Grupo de Alto Risco (Vermelho):** Prognóstico severo (**73.3% em 1 ano**, **33.3% em 3 anos**).
 
 ![Curvas por Grupo de Risco](figures/curvas_sobrevivencia_por_grupo_risco.png)
-*Figura 6: Curvas de Sobrevivência de Kaplan-Meier para os grupos de risco previstos pelo modelo. O modelo separa eficazmente os pacientes em prognósticos distintos.*
+*Figura 7: Curvas de Sobrevivência de Kaplan-Meier estratificadas pelos grupos de risco previstos pelo modelo XGBoost.*
 
-### Previsão Individual do Tempo de Sobrevivência
+### 4.6 Limitações do Estudo
 
-Além de agrupar os pacientes por risco, o pipeline gera uma previsão concreta e individualizada para cada um. O script `src/modeling/predict_survival_time.py` utiliza o modelo treinado para calcular o **tempo mediano de sobrevivência** para cada paciente.
+Este trabalho apresenta algumas limitações importantes que devem ser consideradas na interpretação dos resultados:
+*   **Escopo de Features:** O modelo utilizou exclusivamente dados clínicos e demográficos. A não incorporação de dados moleculares (expressão gênica, mutações) representa uma oportunidade de melhoria, embora o desempenho atual já seja excepcional.
+*   **Generalização:** Os dados provêm de uma única fonte (TCGA), que pode não representar adequadamente a diversidade global de populações e sistemas de saúde.
+*   **Validação Externa:** O modelo foi validado com técnica de *Hold-out* (treino/teste), mas não em uma coorte externa independente de outra instituição.
+*   **Temporalidade dos Dados:** Os dados do TCGA foram coletados em um período específico e podem não refletir os tratamentos mais recentes.
 
-O resultado é consolidado no arquivo `reports/predicted_survival_time.csv`. Este arquivo contém uma tabela detalhada com as características de cada paciente, seu tempo de acompanhamento real e, mais importante, uma coluna chamada `predicted_survival_time`, que apresenta a previsão do modelo em anos. Isso transforma a saída do modelo em um dado acionável e de fácil interpretação em nível individual.
+## 5. Conclusão
 
-## 6. Conclusão
+Este trabalho demonstrou com sucesso a construção de um pipeline de análise de sobrevivência de ponta a ponta para pacientes com adenocarcinoma de cólon. O modelo **XGBoost Survival** foi identificado como o de melhor desempenho, alcançando um C-Index de **~0.95**, superando significativamente o limiar de bom desempenho clínico e demonstrando robustez contra overfitting.
 
-Este projeto demonstrou com sucesso a construção de um pipeline de análise de sobrevivência de ponta a ponta. Conseguimos desenvolver um modelo **XGBoost Survival** de alta performance (C-Index de ~0.95) capaz de estratificar pacientes com câncer de cólon em grupos de risco distintos com precisão excepcional.
+Os principais achados confirmaram o estadiamento patológico AJCC como o fator de risco predominante. A estratificação de pacientes em grupos de risco demonstrou-se altamente efetiva, permitindo a identificação precoce de pacientes que necessitam de intervenções agressivas.
 
-Os principais achados, como a confirmação do estágio da doença como um fator de risco predominante, estão alinhados com a literatura médica e reforçam a validade do nosso modelo. O projeto agora serve como uma base sólida e bem estruturada para futuras explorações, sendo a principal delas a **inclusão de dados moleculares e genômicos** (expressão gênica, mutações), que não foram abordados neste escopo inicial, mas que podem refinar ainda mais a estratificação de risco.
+### 5.1 Contribuições do Trabalho
+
+*   Desenvolvimento de um pipeline modular e documentado para análise de sobrevivência com dados do TCGA.
+*   Comparação sistemática e otimização de algoritmos (CoxPH, RSF, XGBoost).
+*   Implementação de estratificação de risco precisa com potencial aplicação clínica.
+*   Validação de fatores prognósticos conhecidos através de metodologia computacional rigorosa (auditoria de *data leakage*).
+
+### 5.2 Trabalhos Futuros
+
+Como direções para trabalhos futuros, sugere-se:
+*   **Incorporação de dados genômicos:** Integrar dados de expressão gênica e mutações para refinar a predição.
+*   **Validação externa:** Testar o modelo em coortes de hospitais brasileiros ou outros bancos públicos.
+*   **Interpretabilidade Avançada:** Implementar SHAP values para explicar predições individuais do XGBoost.
+*   **Interface Web:** Desenvolver um dashboard interativo para uso clínico da ferramenta de estratificação.

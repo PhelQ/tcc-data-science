@@ -3,6 +3,11 @@ Interpreta o modelo de sobrevivência CoxPH e visualiza os Hazard Ratios.
 """
 
 import logging
+import sys
+import os
+
+# Adiciona o diretório raiz ao path para permitir imports de src
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -16,9 +21,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def get_hazard_ratios(model, training_columns: list) -> pd.DataFrame:
     """Extrai e calcula os Hazard Ratios (Razões de Risco) do modelo CoxPH."""
-    summary = model.summary
-    summary["Hazard Ratio"] = model.hazard_ratios_
-    summary.index = training_columns
+    # Use exp(coef) directly from summary, which IS the hazard ratio
+    # Do not overwrite index with training_columns to avoid potential mismatch
+    summary = model.summary.copy()
+    
+    # Rename for clarity if needed, or just use exp(coef)
+    summary["Hazard Ratio"] = summary["exp(coef)"]
+    
+    # Verify if indices roughly match expectation (optional, but good for debugging)
+    # logging.info(f"Features in model: {summary.index.tolist()[:5]}")
+    
     return summary.sort_values(by="coef", key=abs, ascending=False)
 
 
