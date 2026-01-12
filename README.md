@@ -140,10 +140,3 @@ O projeto segue um pipeline modular e reprodutível:
 │   └── main.py         # Orquestrador do projeto
 └── requirements.txt    # Dependências do projeto
 ```
-
-## 📝 Relatório Completo
-
-Para uma leitura aprofundada sobre a metodologia, análise estatística e discussão dos resultados, consulte o [Relatório do Projeto](reports/relatorio_do_projeto.md).
-
----
-*Desenvolvido como parte do Trabalho de Conclusão de Curso (TCC) em Data Science.*
