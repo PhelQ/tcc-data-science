@@ -93,10 +93,41 @@ def explore_xgboost():
     plt.tight_layout()
     save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_gain_pt.png")
 
-    # 8. SHAP (Nota: Desativado devido a incompatibilidade binária XGBoost > 1.6 / SHAP)
-    # Tentativas de hackear o save_raw falharam com "Expected type size for b'\x00'".
-    # Os plots nativos acima (Gain/Weight) são suficientes para a análise.
-    logging.info("Nota: Análise SHAP ignorada devido a incompatibilidade de versão. Use os plots de Ganho/Peso.")
+    # 8. SHAP (Tentativa com Fix de Compatibilidade)
+    logging.info("Tentando gerar SHAP values (com fix de compatibilidade)...")
+    try:
+        # Hack para compatibilidade XGBoost > 1.0 / SHAP
+        # O problema é que o TreeExplainer as vezes falha ao ler o base_score do modelo salvo
+        # Passar o booster diretamente ajuda
+        booster = final_model.get_booster()
+        
+        # Workaround específico para 'utf-8' error em algumas versões
+        model_bytearray = booster.save_raw()[4:]
+        def myfun(self=None, **kwargs):
+            return model_bytearray
+        booster.save_raw = myfun
+        
+        # Criar Explainer
+        explainer = shap.TreeExplainer(booster)
+        shap_values = explainer.shap_values(X_train)
+        
+        # Summary Plot Traduzido
+        plt.figure(figsize=(12, 10))
+        shap.summary_plot(shap_values, X_train, show=False)
+        plt.title("Impacto das Variáveis na Sobrevivência (SHAP)")
+        plt.xlabel("Valor SHAP (Impacto na saída do modelo)")
+        # Traduzir a barra de cores (manual, difícil no summary_plot padrão, mas o título ajuda)
+        # O summary_plot padrão usa "Feature value: Low <-> High" em inglês.
+        # Podemos tentar sobrescrever o label do eixo X novamente por garantia
+        plt.xlabel("Valor SHAP (Impacto na Predição de Risco)")
+        
+        plt.tight_layout()
+        save_plot(plt.gcf(), config.FIGURES_DIR, "shap_summary_pt.png")
+        logging.info("SHAP gerado com sucesso!")
+        
+    except Exception as e:
+        logging.error(f"Erro ao gerar SHAP: {e}")
+        logging.warning("Seguindo apenas com os plots nativos.")
 
     logging.info("Exploração concluída! Confira os gráficos em reports/figures/")
     

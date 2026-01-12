@@ -33,12 +33,21 @@ O projeto foi estruturado em uma série de scripts Python modulares, garantindo 
 
 ### Etapa 1: Consolidação e Pré-processamento dos Dados
 
-Antes de qualquer análise, precisamos resolver a fragmentação dos dados originais do TCGA, que vêm separados em arquivos distintos (dados clínicos do paciente vs. dados da amostra biológica).
+Antes de qualquer análise, precisamos resolver a fragmentação dos dados originais do TCGA, que vêm separados em arquivos distintos. Esta etapa é fundamental para criar uma visão unificada de cada paciente.
 
--   **`preprocess_data.py`**: Atua como a primeira camada de limpeza. Ele converte os dados brutos (formato TSV) para um formato otimizado (Parquet), garantindo leitura rápida e tipagem correta, sem ainda alterar o conteúdo.
--   **`consolidate_tcga_coad.py`**: Realiza a unificação crítica. Usando o ID único do paciente (`cases.submitter_id`), este script cruza as informações clínicas com os dados da biópsia.
-    -   **Chave de Junção:** `cases.submitter_id` (Identificador único do paciente no TCGA).
-    -   **Racional:** O arquivo `clinical` contém dados demográficos e de sobrevivência, enquanto o `biospecimen` contém detalhes da coleta da amostra. A unificação cria uma "tabela mestre" essencial para associar o perfil do paciente ao material biológico coletado.
+-   **`preprocess_data.py`**: Atua como a primeira camada de limpeza (ETL - Extract, Transform, Load).
+    -   **Função:** Lê os arquivos brutos (`clinical.tsv` e `sample.tsv`) e os converte para o formato **Parquet**.
+    -   **Por que Parquet?** Este formato colunar é altamente eficiente para leitura e preserva os tipos de dados (inteiros, strings, floats) melhor que o CSV/TSV, evitando erros de interpretação numérica nas etapas seguintes.
+
+-   **`consolidate_tcga_coad.py`**: Realiza a fusão dos datasets clínico e de bioespécimes.
+    -   **O Desafio:** Os dados clínicos (informações do paciente) e os dados de bioespécimes (informações da amostra coletada) residem em tabelas separadas. Para correlacionar, por exemplo, o *estágio do câncer* (dado clínico) com o *tipo de tecido* (dado da amostra), precisamos unificá-los.
+    -   **A Solução (Join):** Utilizamos um *Inner Join* na coluna chave `cases.submitter_id`.
+    -   **Detalhamento da Junção:**
+        -   **Tabela Esquerda (Clinical):** Contém ~150 colunas com dados do paciente.
+            -   *Exemplos de colunas:* `demographic.gender`, `demographic.race`, `diagnoses.ajcc_pathologic_stage`, `demographic.vital_status`, `demographic.days_to_death`.
+        -   **Tabela Direita (Biospecimen):** Contém ~40 colunas com dados da coleta física.
+            -   *Exemplos de colunas:* `samples.sample_type` (ex: Tumor Primário), `samples.tissue_type`, `samples.is_ffpe`.
+        -   **Resultado:** Uma "Tabela Mestre" consolidada. O uso do *Inner Join* atua como um filtro de qualidade inicial: pacientes que possuem registros clínicos mas não possuem registros de amostras (ou vice-versa) são descartados, garantindo que o estudo prossiga apenas com casos completos.
 
 ### Etapa 2: Engenharia de Features
 
@@ -78,7 +87,7 @@ Modelos de sobrevivência exigem um formato de dados muito específico que não 
 
 -   **`visualize_survival_curves.py`**: Gera a visualização final, mostrando as curvas de sobrevivência de Kaplan-Meier para os grupos de risco (baixo, médio, alto) definidos pelo modelo.
 
-## 3. Análise Exploratória de Dados (EDA): Principais Achados
+## 3. Análise Exploratória de Dados: Principais Achados
 
 A análise exploratória revelou insights importantes sobre o conjunto de dados:
 
@@ -179,9 +188,6 @@ Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso 
         *   **Origem do Tumor** (Ceco e Cólon Descendente).
         *   **Idade** (Fator de risco natural).
 
-    ![Importância das Features XGBoost](figures/xgboost_importancia_variaveis.png)
-    *Figura 5: Importância das variáveis baseada no Ganho de Informação (XGBoost). O modelo prioriza corretamente o estágio avançado e a idade.*
-
     *   A ausência de uma feature "mágica" confirma que o XGBoost aprendeu interações não-lineares genuínas entre estágio, idade e localização, maximizando a extração de sinal dos dados disponíveis.
 
 **Conclusão da Auditoria:** O C-Index de ~0.95 é robusto, legítimo e validado em um conjunto de teste independente (Hold-out), consolidando o XGBoost como a escolha definitiva para este projeto.
@@ -191,7 +197,7 @@ Para garantir a legitimidade desse resultado, submetemos o modelo a um rigoroso 
 Embora o XGBoost seja o nosso modelo de previsão definitivo, utilizamos o **Cox Proportional Hazards (CoxPH)** como uma ferramenta auxiliar de explicação devido à sua simplicidade estatística. O gráfico de "Hazard Ratios" (Razões de Risco) abaixo mostra o impacto de cada variável. Valores acima de 1 indicam um aumento no risco. Esta abordagem híbrida nos dá o melhor dos dois mundos: a precisão do XGBoost e a explicabilidade do CoxPH.
 
 ![Hazard Ratios](figures/razoes_risco_cox.png)
-*Figura 6: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
+*Figura 5: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
 
 **Validação Biológica:** Graças à etapa rigorosa de filtragem de dados, os fatores de risco identificados são consistentes com a literatura médica (estágio avançado como principal risco, estágio inicial como fator protetor). Artefatos encontrados em análises preliminares (como associações com tecidos não-cólon) foram eliminados, garantindo a confiabilidade clínica do modelo.
 

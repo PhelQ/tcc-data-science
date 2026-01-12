@@ -10,7 +10,7 @@ import seaborn as sns
 
 from src import config
 from src.utils import load_data, save_plot, load_model
-from src.modeling.predicao_tempodevida import align_columns
+from src.modeling.predict_survival_time import align_columns
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -49,7 +49,7 @@ def plot_survival_by_risk_group(df: pd.DataFrame, figures_dir: str):
         "Tempo (Anos)",
         "Probabilidade de Sobrevivência",
     )
-    save_plot(fig, figures_dir, "curvas_sobrevivencia_por_grupo_risco.png")
+    save_plot(fig, figures_dir, "curvas_sobrevivencia_por_grupos_risco.png")
 
 
 def main():
@@ -57,17 +57,7 @@ def main():
     logging.info("Iniciando a geração de visualizações de sobrevivência...")
 
     # Carregar dados e modelo
-    # IMPORTANTE: Usamos o conjunto de TESTE para gerar curvas honestas e evitar overfitting
-    try:
-        df = load_data(config.TEST_DATA_PATH)
-        logging.info(f"Carregando dados de TESTE para visualização: {config.TEST_DATA_PATH}")
-    except FileNotFoundError:
-        logging.warning(
-            f"Arquivo de teste não encontrado em {config.TEST_DATA_PATH}. "
-            "Tentando carregar dados completos (CUIDADO: Pode haver data leakage)..."
-        )
-        df = load_data(config.FEATURES_SURVIVAL_PATH)
-
+    df = load_data(config.FEATURES_SURVIVAL_PATH)
     model = load_model(config.SURVIVAL_MODEL_PATH)
     training_columns = load_model(config.TRAINING_COLUMNS_PATH)
 
