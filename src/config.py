@@ -56,6 +56,8 @@ TEST_DATA_PATH = os.path.join(
 
 # Caminhos para modelos
 COXPH_MODEL_PATH = os.path.join(MODELS_DIR, 'coxph_model.joblib')
+RSF_MODEL_PATH = os.path.join(MODELS_DIR, 'rsf_model.joblib')
+XGB_MODEL_PATH = os.path.join(MODELS_DIR, 'xgb_model.joblib')
 SURVIVAL_MODEL_PATH = os.path.join(MODELS_DIR, 'survival_model.joblib')
 TRAINING_COLUMNS_PATH = os.path.join(MODELS_DIR, 'training_columns.joblib')
 
