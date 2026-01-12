@@ -89,7 +89,7 @@ def get_models_config() -> dict:
             random_state=42,
             eval_metric="cox-nloglik",
             n_jobs=-1,
-            # Parâmetros Otimizados via 'torture_xgboost' (C-Index ~0.96)
+            # Parâmetros Otimizados via 'exploracao_xgboost' (C-Index ~0.96)
             max_depth=8,            
             learning_rate=0.1,     
             n_estimators=500,     
