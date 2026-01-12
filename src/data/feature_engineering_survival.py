@@ -14,6 +14,19 @@ def rename_and_select_columns(df: pd.DataFrame) -> pd.DataFrame:
     logging.info("Selecionando e renomeando colunas...")
     return df[list(config.SURVIVAL_COLUMNS_MAP.keys())].rename(columns=config.SURVIVAL_COLUMNS_MAP)
 
+def filter_colon_samples(df: pd.DataFrame) -> pd.DataFrame:
+    """Filtra apenas amostras de tecido de cólon."""
+    logging.info("Filtrando amostras de tecido de cólon...")
+    valid_sites = [
+        "Sigmoid colon", "Ascending colon", "Colon, NOS", "Cecum", 
+        "Transverse colon", "Descending colon", "Rectosigmoid junction", 
+        "Hepatic flexure of colon", "Splenic flexure of colon"
+    ]
+    initial_len = len(df)
+    df_filtered = df[df["tissue_or_organ_of_origin"].isin(valid_sites)]
+    logging.info(f"Removidas {initial_len - len(df_filtered)} amostras não-cólon.")
+    return df_filtered
+
 def convert_to_numeric(df: pd.DataFrame) -> pd.DataFrame:
     """Converte colunas para o tipo numérico."""
     logging.info("Convertendo colunas para numérico...")
@@ -53,6 +66,7 @@ def main():
     
     df_survival = (
         df_consolidated.pipe(rename_and_select_columns)
+        .pipe(filter_colon_samples)
         .pipe(convert_to_numeric)
         .pipe(create_event_and_time_vars)
         .pipe(discretize_age)
