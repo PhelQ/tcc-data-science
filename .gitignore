@@ -1,0 +1,20 @@
+# Ambiente Virtual
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Arquivos de sistema
+.DS_Store
+
+# Dados brutos, processados e de depuração
+data/raw/
+data/interim/
+data/processed/
+*debug.txt
+
+# Modelos treinados
+models/*.joblib
+
+# Relatórios e figuras geradas
+reports/*.csv
