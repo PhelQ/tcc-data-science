@@ -10,8 +10,6 @@ Desenvolver um modelo capaz de estratificar pacientes em grupos de risco (baixo,
 
 O modelo final (**Random Survival Forest**) alcançou um **C-Index de 0.85** (nos testes de validação), demonstrando alta capacidade de discriminação entre pacientes de diferentes riscos.
 
-![Curvas de Sobrevivência](reports/figures/curvas_sobrevivencia_por_grupos_risco.png)
-*Curvas de Kaplan-Meier para os grupos de risco identificados pelo modelo.*
 
 ## 🛠️ Pipeline do Projeto
 
