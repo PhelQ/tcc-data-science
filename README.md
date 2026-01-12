@@ -18,7 +18,9 @@ O modelo final (**Random Survival Forest**) alcançou um **C-Index de 0.85** (no
 O projeto segue um pipeline modular e reprodutível:
 
 1.  **Coleta e Consolidação**: Unificação de dados clínicos e de bioespécimes do TCGA.
-2.  **Engenharia de Features**: Criação de variáveis de sobrevivência (tempo observado, censura, faixas etárias).
+2.  **Engenharia de Features e Limpeza**: 
+    *   Filtragem rigorosa de amostras (mantendo apenas sítios anatômicos confirmados de cólon, removendo ~1.500 amostras inconsistentes ou de outros tecidos).
+    *   Criação de variáveis de sobrevivência (tempo observado, censura, faixas etárias).
 3.  **Análise Exploratória (EDA)**: Estudos detalhados sobre distribuição de idade, estágio e curvas de Kaplan-Meier.
 4.  **Modelagem**: Treinamento e comparação de modelos:
     *   *Cox Proportional Hazards* (Foco em explicabilidade)

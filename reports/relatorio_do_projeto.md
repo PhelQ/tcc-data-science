@@ -25,7 +25,10 @@ Antes de qualquer análise, precisamos resolver a fragmentação dos dados origi
 
 Modelos de sobrevivência exigem um formato de dados muito específico que não existe nativamente nas bases brutas. Esta etapa transforma dados administrativos em variáveis matemáticas de sobrevivência.
 
--   **`feature_engineering_survival.py`**: Seleciona e transforma as colunas brutas do TCGA para o formato de modelagem.
+-   **`feature_engineering_survival.py`**: Seleciona, limpa e transforma as colunas brutas do TCGA para o formato de modelagem.
+    -   **Controle de Qualidade (Filtro de Tecidos):**
+        -   Foi implementada uma etapa crítica de limpeza para remover amostras que não correspondiam a adenocarcinomas primários de cólon (ex: amostras de reto, metástases distantes ou tecidos não especificados corretamente no dataset original).
+        -   **Resultado:** Remoção de ~1.484 amostras inconsistentes, garantindo que o modelo aprenda apenas com dados biologicamente coerentes.
     -   **Seleção de Variáveis (Mapeamento):**
         -   `demographic.vital_status` -> `vital_status` (Status Vivo/Morto)
         -   `diagnoses.ajcc_pathologic_stage` -> `ajcc_pathologic_stage` (Estágio do Câncer)
@@ -117,27 +120,26 @@ Se dividíssemos os dados apenas uma vez (ex: 80% treino, 20% teste), poderíamo
 
 Avaliamos três arquiteturas distintas e comparamos seu desempenho utilizando a métrica **C-Index**. Abaixo, apresentamos os resultados detalhados:
 
-| Modelo | C-Index Médio | Desvio Padrão (Estabilidade) |
+| Modelo | C-Index (Teste) | C-Index (Média CV) |
 | :--- | :--- | :--- |
-| **Random Survival Forest (RSF)** | **0.9445** | **± 0.0055** |
-| **XGBoost Survival** | 0.8595 | ± 0.0701 |
-| **Cox Proportional Hazards (CoxPH)** | 0.7703 | ± 0.0174 |
+| **Random Survival Forest (RSF)** | **0.8511** | **0.8487** |
+| **XGBoost Survival** | 0.8150 | 0.8246 |
+| **Cox Proportional Hazards (CoxPH)** | 0.7204 | 0.7486 |
 
 **O que significam esses números?**
 
 *   **C-Index (Concordance Index):** É a métrica que define a qualidade da previsão. Ela indica a probabilidade de o modelo ordenar corretamente dois pacientes aleatórios (quem morre primeiro deve ter maior risco).
     *   **0.5:** Desempenho aleatório (igual jogar uma moeda).
     *   **0.7 - 0.8:** Bom desempenho clínico.
-    *   **> 0.9:** Desempenho excelente.
+    *   **> 0.8:** Desempenho excelente para dados clínicos complexos.
     *   **1.0:** Previsão perfeita.
     
-    No nosso caso, o **Random Survival Forest** atingiu **0.94**, um resultado excepcional.
+    No nosso caso, o **Random Survival Forest** atingiu **0.85**, um resultado excelente e muito robusto.
 
-*   **Desvio Padrão (Std Dev):** Mede a confiança e estabilidade do modelo.
-    *   Um valor **baixo** (como o **0.0055** do RSF) indica um modelo **robusto**, que performa bem independentemente de como dividimos os dados de teste.
-    *   Um valor **alto** (como o **0.0701** do XGBoost) indica **instabilidade**, sugerindo que o modelo pode variar muito dependendo dos dados de entrada.
+*   **Consistência (Teste vs CV):** 
+    *   A proximidade entre o resultado no conjunto de Teste (0.8511) e a média da Validação Cruzada (0.8487) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
 
-**Vencedor:** O modelo **Random Survival Forest** foi o grande vencedor. Ele não apenas obteve a maior média de acerto (0.94 vs 0.86 do XGBoost), mas também provou ser muito mais estável e confiável. Por isso, ele foi selecionado como nosso modelo final.
+**Vencedor:** O modelo **Random Survival Forest** foi o grande vencedor. Ele superou o XGBoost e o CoxPH, lidando melhor com as interações não-lineares entre as variáveis clínicas sem perder a capacidade de generalização.
 
 #### Interpretação dos Fatores de Risco
 
@@ -147,6 +149,8 @@ Para entender *quais* fatores mais influenciam a sobrevivência de forma transpa
 
 ![Hazard Ratios](figures/razoes_risco_cox.png)
 *Figura 5: Gráfico de Hazard Ratios das features mais importantes segundo o modelo CoxPH. O estágio da doença (ajcc_pathologic_stage) se destaca como o fator de maior impacto.*
+
+**Validação Biológica:** Graças à etapa rigorosa de filtragem de dados, os fatores de risco identificados são consistentes com a literatura médica (estágio avançado como principal risco, estágio inicial como fator protetor). Artefatos encontrados em análises preliminares (como associações com tecidos não-cólon) foram eliminados, garantindo a confiabilidade clínica do modelo.
 
 ## 5. Resultados Finais: Estratificação de Risco
 
@@ -163,6 +167,6 @@ O resultado é consolidado no arquivo `reports/predicted_survival_time.csv`. Est
 
 ## 6. Conclusão
 
-Este projeto demonstrou com sucesso a construção de um pipeline de análise de sobrevivência de ponta a ponta. Conseguimos desenvolver um modelo Random Survival Forest de alta performance (C-Index de 0.94) capaz de estratificar pacientes com câncer de cólon em grupos de risco distintos com base em seus dados clínicos e demográficos.
+Este projeto demonstrou com sucesso a construção de um pipeline de análise de sobrevivência de ponta a ponta. Conseguimos desenvolver um modelo Random Survival Forest de alta performance (C-Index de 0.85) capaz de estratificar pacientes com câncer de cólon em grupos de risco distintos com base em seus dados clínicos e demográficos.
 
 Os principais achados, como a confirmação do estágio da doença como um fator de risco predominante, estão alinhados com a literatura médica e reforçam a validade do nosso modelo. O projeto agora serve como uma base sólida e bem estruturada para futuras explorações, sendo a principal delas a **inclusão de dados moleculares e genômicos** (expressão gênica, mutações), que não foram abordados neste escopo inicial, mas que podem refinar ainda mais a estratificação de risco.
