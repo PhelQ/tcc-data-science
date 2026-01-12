@@ -35,11 +35,50 @@ def convert_to_numeric(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def create_event_and_time_vars(df: pd.DataFrame) -> pd.DataFrame:
-    """Cria as variáveis de evento e tempo observado."""
+    """Cria as variáveis de evento e tempo observado de forma robusta."""
     logging.info("Criando variáveis de evento e tempo...")
+    
+    # 1. Definir evento
     df["event_occurred"] = (df["vital_status"] == "Dead").astype(int)
-    df["observed_time"] = df[["days_to_last_follow_up", "days_to_death"]].max(axis=1) / 365.25
-    return df[df["observed_time"] > 0]
+    
+    # 2. Calcular tempo observado com lógica condicional estrita
+    # Se morto -> days_to_death
+    # Se vivo -> days_to_last_follow_up
+    # Se ambos nulos ou inconsistentes -> NaN (serão removidos depois)
+    
+    import numpy as np
+    
+    # Inicializa com NaN
+    df["observed_days"] = np.nan
+    
+    # Máscaras
+    mask_dead = df["event_occurred"] == 1
+    mask_alive = df["event_occurred"] == 0
+    
+    # Atribuição condicional
+    df.loc[mask_dead, "observed_days"] = df.loc[mask_dead, "days_to_death"]
+    df.loc[mask_alive, "observed_days"] = df.loc[mask_alive, "days_to_last_follow_up"]
+    
+    # Remover pacientes sem informação de tempo
+    initial_count = len(df)
+    df = df.dropna(subset=["observed_days"])
+    dropped_nan = initial_count - len(df)
+    if dropped_nan > 0:
+        logging.warning(f"Removidos {dropped_nan} pacientes sem informação de tempo (NaN).")
+    
+    # Tratar tempos <= 0 (Diagnóstico e óbito/seguimento no mesmo dia)
+    # Adicionamos 1 dia (1/365.25 anos) para evitar erro matemático em modelos Cox (log(0))
+    # e para não descartar esses casos críticos de mortalidade imediata.
+    mask_zero_neg = df["observed_days"] <= 0
+    n_zeros = mask_zero_neg.sum()
+    if n_zeros > 0:
+        logging.info(f"Corrigindo {n_zeros} registros com tempo <= 0 adicionando 1 dia.")
+        df.loc[mask_zero_neg, "observed_days"] = 1.0
+        
+    # Converter para anos
+    df["observed_time"] = df["observed_days"] / 365.25
+    
+    return df
 
 def discretize_age(df: pd.DataFrame) -> pd.DataFrame:
     """Discretizes age into bins."""

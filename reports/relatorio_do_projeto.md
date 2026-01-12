@@ -141,9 +141,14 @@ Avaliamos três arquiteturas distintas e comparamos seu desempenho utilizando a 
 
 | Modelo | C-Index (Teste) | C-Index (Média CV) |
 | :--- | :--- | :--- |
-| **Random Survival Forest (RSF)** | **0.8511** | **0.8487** |
-| **XGBoost Survival** | 0.8150 | 0.8246 |
-| **Cox Proportional Hazards (CoxPH)** | 0.7204 | 0.7486 |
+| **Random Survival Forest (RSF)** | **0.8757** | **0.8486** |
+| **XGBoost Survival** | 0.8313 | 0.8279 |
+| **Cox Proportional Hazards (CoxPH)** | 0.7390 | 0.7384 |
+
+**Nota sobre Metodologia Rigorosa:**
+Para garantir a integridade dos resultados, implementamos salvaguardas metodológicas avançadas:
+1.  **Prevenção de Vazamento de Dados (Data Leakage):** Todo o pré-processamento de variáveis categóricas (One-Hot Encoding) foi isolado, sendo ajustado (*fit*) exclusivamente no conjunto de treino e aplicado (*transform*) no conjunto de teste. Durante a validação cruzada, este isolamento foi replicado dentro de cada *fold*, garantindo que nenhuma informação do teste "vazasse" para o treino.
+2.  **Tratamento de Tempo Zero:** Pacientes com tempo de sobrevivência registrado como zero (óbito ou censura no dia do diagnóstico) foram tratados matematicamente (adição de epsilon) em vez de descartados, evitando viés de seleção e perda de casos críticos de alta mortalidade.
 
 **O que significam esses números?**
 
@@ -153,10 +158,10 @@ Avaliamos três arquiteturas distintas e comparamos seu desempenho utilizando a 
     *   **> 0.8:** Desempenho excelente para dados clínicos complexos.
     *   **1.0:** Previsão perfeita.
     
-    No nosso caso, o **Random Survival Forest** atingiu **0.85**, um resultado excelente e muito robusto.
+    No nosso caso, o **Random Survival Forest** atingiu **0.87**, um resultado excepcional e extremamente robusto.
 
 *   **Consistência (Teste vs CV):** 
-    *   A proximidade entre o resultado no conjunto de Teste (0.8511) e a média da Validação Cruzada (0.8487) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
+    *   A proximidade entre o resultado no conjunto de Teste (0.8757) e a média da Validação Cruzada (0.8486) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
 
 **Vencedor:** O modelo **Random Survival Forest** foi o grande vencedor. Ele superou o XGBoost e o CoxPH, lidando melhor com as interações não-lineares entre as variáveis clínicas sem perder a capacidade de generalização.
 

@@ -18,12 +18,10 @@ from src.utils import load_data, save_data, save_model
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-def load_and_preprocess_data(data_path: str) -> tuple:
-    """Carrega e pré-processa os dados para modelagem.
-
-    Retorna:
-        - X_processed (pd.DataFrame): DataFrame de features pronto para o modelo.
-        - y (np.ndarray): Array estruturado para análise de sobrevivência.
+def load_and_split_data(data_path: str) -> tuple:
+    """Carrega os dados e realiza o split Treino/Teste preservando tipos.
+    
+    NÃO realiza One-Hot Encoding aqui para evitar Data Leakage.
     """
     logging.info(f"Carregando dados de {data_path}...")
     df = load_data(data_path)
@@ -33,14 +31,47 @@ def load_and_preprocess_data(data_path: str) -> tuple:
         list(zip(df["event_occurred"], df["observed_time"])),
         dtype=[("event", "bool"), ("time", "float64")],
     )
+    
+    # Identificar colunas categóricas para processamento posterior
+    categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
+    logging.info(f"Features categóricas identificadas: {categorical_features}")
+    
+    return X, y, categorical_features
 
-    logging.info("Pré-processando features (one-hot encoding)...")
-    categorical_features = X.select_dtypes(include=["object", "category"]).columns
-    X_processed = pd.get_dummies(
-        X, columns=categorical_features, drop_first=True, dummy_na=False
-    )
+def encode_features(X_train: pd.DataFrame, X_test: pd.DataFrame, cat_features: list) -> tuple:
+    """Realiza One-Hot Encoding fitando APENAS no treino e transformando o teste.
+    
+    Evita Data Leakage garantindo que o modelo não conheça categorias
+    que só existem no conjunto de teste.
+    """
+    logging.info("Realizando One-Hot Encoding (Fit no Treino, Transform no Teste)...")
+    
+    # Se não houver features categóricas, retorna como está
+    if not cat_features:
+        return X_train, X_test
 
-    return X_processed, y
+    # Usamos pd.get_dummies no treino para definir as colunas base
+    X_train_enc = pd.get_dummies(X_train, columns=cat_features, drop_first=True, dummy_na=False)
+    
+    # Aplicamos as mesmas transformações no teste
+    X_test_enc = pd.get_dummies(X_test, columns=cat_features, drop_first=True, dummy_na=False)
+    
+    # Alinhamento de colunas (Garantiar que Teste tenha exatamente as colunas do Treino)
+    # 1. Adicionar colunas faltantes no teste (preenchidas com 0)
+    missing_cols = set(X_train_enc.columns) - set(X_test_enc.columns)
+    for c in missing_cols:
+        X_test_enc[c] = 0
+        
+    # 2. Remover colunas extras no teste (que não existiam no treino)
+    extra_cols = set(X_test_enc.columns) - set(X_train_enc.columns)
+    if extra_cols:
+        logging.warning(f"Ignorando colunas inéditas no teste: {extra_cols}")
+        X_test_enc = X_test_enc.drop(columns=extra_cols)
+        
+    # 3. Reordenar para garantir a mesma ordem
+    X_test_enc = X_test_enc[X_train_enc.columns]
+    
+    return X_train_enc, X_test_enc
 
 
 def get_models_config() -> dict:
@@ -118,11 +149,8 @@ def evaluate_model(
         return 0.0
 
 
-def cross_validate_models(X: pd.DataFrame, y: np.ndarray) -> dict:
-    """Avalia múltiplos modelos usando validação cruzada K-Fold."""
-    
-    # Precisamos reinstanciar os modelos a cada fold para garantir limpeza
-    # Então definimos uma factory function ou chamamos get_models_config dentro do loop
+def cross_validate_models(X: pd.DataFrame, y: np.ndarray, cat_features: list) -> dict:
+    """Avalia múltiplos modelos usando validação cruzada K-Fold com pipeline correto."""
     
     cv = KFold(n_splits=5, shuffle=True, random_state=42)
     model_names = get_models_config().keys()
@@ -134,11 +162,15 @@ def cross_validate_models(X: pd.DataFrame, y: np.ndarray) -> dict:
         logging.info(f"Avaliando: {model_name}")
         fold = 1
         for train_index, val_index in cv.split(X, y):
-            # Instancia novo modelo limpo para cada fold
-            model = get_models_config()[model_name]
-            
-            X_train_cv, X_val_cv = X.iloc[train_index], X.iloc[val_index]
+            # Split nos dados brutos
+            X_train_cv_raw, X_val_cv_raw = X.iloc[train_index], X.iloc[val_index]
             y_train_cv, y_val_cv = y[train_index], y[val_index]
+            
+            # Feature Engineering isolado por fold (Evita Data Leakage)
+            X_train_cv, X_val_cv = encode_features(X_train_cv_raw, X_val_cv_raw, cat_features)
+            
+            # Instancia novo modelo limpo
+            model = get_models_config()[model_name]
 
             c_index = evaluate_model(model_name, model, X_train_cv, y_train_cv, X_val_cv, y_val_cv)
             if c_index > 0.0:
@@ -160,31 +192,37 @@ def main():
     """Função principal para executar o pipeline comparativo."""
     logging.info("Iniciando pipeline comparativo de modelos de sobrevivência...")
     
-    # 1. Carregar e pré-processar
-    X, y = load_and_preprocess_data(config.FEATURES_SURVIVAL_PATH)
+    # 1. Carregar e Split Inicial (Treino/Teste)
+    # O split acontece ANTES de qualquer encoding para garantir isolamento total do teste
+    X, y, cat_features = load_and_split_data(config.FEATURES_SURVIVAL_PATH)
     
     # 2. Split Treino/Teste (80/20)
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y["event"]
     )
-    logging.info(f"Dados divididos: Treino={len(X_train)}, Teste={len(X_test)}")
+    logging.info(f"Dados divididos: Treino={len(X_train_raw)}, Teste={len(X_test_raw)}")
     
-    # Salvar datasets
-    train_df = X_train.copy()
+    # 3. Validação Cruzada no Treino (Nested CV logic)
+    # Passamos os dados brutos e a lista de features categóricas para que o encoding
+    # ocorra dentro de cada fold
+    cv_results = cross_validate_models(X_train_raw, y_train, cat_features)
+    
+    # 4. Treinamento Final e Avaliação no Teste
+    logging.info("--- Treinando modelos finais e avaliando no Teste ---")
+    
+    # Agora sim aplicamos o encoding final no conjunto de treino completo e no teste
+    X_train_final, X_test_final = encode_features(X_train_raw, X_test_raw, cat_features)
+    
+    # Salvar datasets processados (snapshot do que foi usado no treino final)
+    train_df = X_train_final.copy()
     train_df["event_occurred"] = y_train["event"]
     train_df["observed_time"] = y_train["time"]
     save_data(train_df, config.TRAIN_DATA_PATH)
     
-    test_df = X_test.copy()
+    test_df = X_test_final.copy()
     test_df["event_occurred"] = y_test["event"]
     test_df["observed_time"] = y_test["time"]
     save_data(test_df, config.TEST_DATA_PATH)
-    
-    # 3. Validação Cruzada no Treino
-    cv_results = cross_validate_models(X_train, y_train)
-    
-    # 4. Treinamento Final e Avaliação no Teste
-    logging.info("--- Treinando modelos finais e avaliando no Teste ---")
     
     models = get_models_config()
     final_metrics = []
@@ -195,10 +233,10 @@ def main():
     for name, model in models.items():
         # Treinar em TODO o conjunto de treino
         logging.info(f"Treinando {name}...")
-        fit_model(name, model, X_train, y_train)
+        fit_model(name, model, X_train_final, y_train)
         
         # Avaliar no Teste
-        y_pred_test = predict_risk(name, model, X_test)
+        y_pred_test = predict_risk(name, model, X_test_final)
         c_index_test = concordance_index_censored(y_test["event"], y_test["time"], y_pred_test)[0]
         
         # Recuperar métricas de CV
@@ -248,8 +286,8 @@ def main():
     save_model(best_model_instance, config.SURVIVAL_MODEL_PATH)
     logging.info(f"Melhor modelo salvo como padrão em: {config.SURVIVAL_MODEL_PATH}")
     
-    # Salvar colunas de treino
-    save_model(list(X_train.columns), config.TRAINING_COLUMNS_PATH)
+    # Salvar colunas de treino (Importante: usar colunas finais pós-encoding)
+    save_model(list(X_train_final.columns), config.TRAINING_COLUMNS_PATH)
     logging.info("Pipeline comparativo concluído com sucesso!")
 
 
