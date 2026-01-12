@@ -80,9 +80,18 @@ def cross_validate_models(X: pd.DataFrame, y: np.ndarray) -> dict:
     """Avalia múltiplos modelos de sobrevivência usando validação cruzada K-Fold."""
     models = {
         "CoxPH": CoxPHFitter(penalizer=0.1),
-        "RandomSurvivalForest": RandomSurvivalForest(random_state=42),
+        "RandomSurvivalForest": RandomSurvivalForest(
+            random_state=42, min_samples_leaf=15, max_depth=10, n_estimators=200
+        ),
         "XGBoostSurvival": XGBRegressor(
-            objective="survival:cox", random_state=42, eval_metric="cox-nloglik"
+            objective="survival:cox",
+            random_state=42,
+            eval_metric="cox-nloglik",
+            max_depth=3,            # Evita overfitting
+            learning_rate=0.05,     # Aprendizado mais lento e estável
+            min_child_weight=5,     # Exige mais amostras para criar nó
+            reg_alpha=0.5,          # Regularização L1
+            reg_lambda=0.5          # Regularização L2
         ),
     }
 
@@ -132,9 +141,18 @@ def train_and_save_models(
     """Treina o melhor modelo e um modelo CoxPH para interpretação, e os salva."""
     models = {
         "CoxPH": CoxPHFitter(penalizer=0.1),
-        "RandomSurvivalForest": RandomSurvivalForest(random_state=42),
+        "RandomSurvivalForest": RandomSurvivalForest(
+            random_state=42, min_samples_leaf=15, max_depth=10, n_estimators=200
+        ),
         "XGBoostSurvival": XGBRegressor(
-            objective="survival:cox", random_state=42, eval_metric="cox-nloglik"
+            objective="survival:cox",
+            random_state=42,
+            eval_metric="cox-nloglik",
+            max_depth=3,
+            learning_rate=0.05,
+            min_child_weight=5,
+            reg_alpha=0.5,
+            reg_lambda=0.5
         ),
     }
 
