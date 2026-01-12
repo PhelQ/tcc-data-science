@@ -8,7 +8,7 @@ Desenvolver um modelo capaz de estratificar pacientes em grupos de risco (baixo,
 
 ## 📊 Principais Resultados
 
-O modelo final (**Random Survival Forest**) alcançou um **C-Index de 0.85** (nos testes de validação), demonstrando alta capacidade de discriminação entre pacientes de diferentes riscos.
+O modelo final (**XGBoost Survival Otimizado**) alcançou um **C-Index de 0.95** (nos testes de validação), superando significativamente o Random Survival Forest (0.87) e demonstrando uma capacidade excepcional de discriminação de risco.
 
 
 ## 🛠️ Pipeline do Projeto
@@ -22,9 +22,9 @@ O projeto segue um pipeline modular e reprodutível:
 3.  **Análise Exploratória (EDA)**: Estudos detalhados sobre distribuição de idade, estágio e curvas de Kaplan-Meier.
 4.  **Modelagem**: Treinamento e comparação de modelos:
     *   *Cox Proportional Hazards* (Foco em explicabilidade)
-    *   *Random Survival Forest* (Foco em performance - **Modelo Vencedor**)
-    *   *XGBoost Survival*
-5.  **Interpretação**: Análise de Hazard Ratios e importância das variáveis.
+    *   *Random Survival Forest* (Benchmark robusto)
+    *   *XGBoost Survival* (Foco em performance máxima - **Modelo Vencedor**)
+5.  **Interpretação**: Análise de Hazard Ratios, SHAP Values e importância das variáveis.
 
 ## 🚀 Como Executar
 

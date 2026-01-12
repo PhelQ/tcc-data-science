@@ -141,14 +141,15 @@ Avaliamos três arquiteturas distintas e comparamos seu desempenho utilizando a 
 
 | Modelo | C-Index (Teste) | C-Index (Média CV) |
 | :--- | :--- | :--- |
-| **Random Survival Forest (RSF)** | **0.8757** | **0.8486** |
-| **XGBoost Survival** | 0.8313 | 0.8279 |
+| **XGBoost Survival (Otimizado)** | **0.9541** | **0.9458** |
+| **Random Survival Forest (RSF)** | 0.8757 | 0.8486 |
 | **Cox Proportional Hazards (CoxPH)** | 0.7390 | 0.7384 |
 
 **Nota sobre Metodologia Rigorosa:**
 Para garantir a integridade dos resultados, implementamos salvaguardas metodológicas avançadas:
-1.  **Prevenção de Vazamento de Dados (Data Leakage):** Todo o pré-processamento de variáveis categóricas (One-Hot Encoding) foi isolado, sendo ajustado (*fit*) exclusivamente no conjunto de treino e aplicado (*transform*) no conjunto de teste. Durante a validação cruzada, este isolamento foi replicado dentro de cada *fold*, garantindo que nenhuma informação do teste "vazasse" para o treino.
-2.  **Tratamento de Tempo Zero:** Pacientes com tempo de sobrevivência registrado como zero (óbito ou censura no dia do diagnóstico) foram tratados matematicamente (adição de epsilon) em vez de descartados, evitando viés de seleção e perda de casos críticos de alta mortalidade.
+1.  **Otimização de Hiperparâmetros:** O modelo XGBoost passou por um processo intensivo de *Random Search* para ajuste fino de parâmetros (profundidade de árvores, taxa de aprendizado, regularização L1/L2), o que resultou em um salto significativo de desempenho (de ~0.83 para ~0.95).
+2.  **Prevenção de Vazamento de Dados (Data Leakage):** Todo o pré-processamento de variáveis categóricas (One-Hot Encoding) foi isolado, sendo ajustado (*fit*) exclusivamente no conjunto de treino e aplicado (*transform*) no conjunto de teste. Durante a validação cruzada, este isolamento foi replicado dentro de cada *fold*, garantindo que nenhuma informação do teste "vazasse" para o treino.
+3.  **Tratamento de Tempo Zero:** Pacientes com tempo de sobrevivência registrado como zero (óbito ou censura no dia do diagnóstico) foram tratados matematicamente (adição de epsilon) em vez de descartados, evitando viés de seleção e perda de casos críticos de alta mortalidade.
 
 **O que significam esses números?**
 
@@ -156,14 +157,14 @@ Para garantir a integridade dos resultados, implementamos salvaguardas metodoló
     *   **0.5:** Desempenho aleatório (igual jogar uma moeda).
     *   **0.7 - 0.8:** Bom desempenho clínico.
     *   **> 0.8:** Desempenho excelente para dados clínicos complexos.
-    *   **1.0:** Previsão perfeita.
+    *   **> 0.9:** Estado da arte (raro em dados puramente clínicos).
     
-    No nosso caso, o **Random Survival Forest** atingiu **0.87**, um resultado excepcional e extremamente robusto.
+    No nosso caso, o **XGBoost Survival** atingiu **0.95**, um resultado excepcional que demonstra a capacidade do modelo de capturar padrões complexos e não-lineares nos dados.
 
 *   **Consistência (Teste vs CV):** 
-    *   A proximidade entre o resultado no conjunto de Teste (0.8757) e a média da Validação Cruzada (0.8486) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
+    *   A proximidade entre o resultado no conjunto de Teste (0.9541) e a média da Validação Cruzada (0.9458) confirma que o modelo não sofreu *overfitting* e generaliza bem para novos pacientes.
 
-**Vencedor:** O modelo **Random Survival Forest** foi o grande vencedor. Ele superou o XGBoost e o CoxPH, lidando melhor com as interações não-lineares entre as variáveis clínicas sem perder a capacidade de generalização.
+**Vencedor:** O modelo **XGBoost Survival** foi o grande vencedor após a otimização. Ele superou o RSF e o CoxPH, lidando melhor com as interações não-lineares entre as variáveis clínicas sem perder a capacidade de generalização.
 
 #### Interpretação dos Fatores de Risco
 

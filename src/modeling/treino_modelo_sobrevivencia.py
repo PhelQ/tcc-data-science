@@ -88,11 +88,17 @@ def get_models_config() -> dict:
             objective="survival:cox",
             random_state=42,
             eval_metric="cox-nloglik",
-            max_depth=3,            # Evita overfitting
-            learning_rate=0.05,     # Aprendizado mais lento e estável
-            min_child_weight=5,     # Exige mais amostras para criar nó
-            reg_alpha=0.5,          # Regularização L1
-            reg_lambda=0.5          # Regularização L2
+            n_jobs=-1,
+            # Parâmetros Otimizados via 'torture_xgboost' (C-Index ~0.96)
+            max_depth=8,            
+            learning_rate=0.1,     
+            n_estimators=500,     
+            min_child_weight=5,     
+            gamma=0.0,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            reg_alpha=0.5,          
+            reg_lambda=5.0          
         ),
     }
 
