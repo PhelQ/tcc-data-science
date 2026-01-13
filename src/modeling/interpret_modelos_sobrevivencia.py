@@ -3,11 +3,6 @@ Interpreta o modelo de sobrevivência CoxPH e visualiza os Hazard Ratios.
 """
 
 import logging
-import sys
-import os
-
-# Adiciona o diretório raiz ao path para permitir imports de src
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import matplotlib.pyplot as plt
 import pandas as pd
