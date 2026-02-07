@@ -56,6 +56,9 @@ def main():
     """Executa o pipeline de visualização de sobrevivência."""
     logging.info("Iniciando a geração de visualizações de sobrevivência...")
 
+    # Configurar estilo visual
+    sns.set_theme(style="whitegrid")
+
     # Carregar dados e modelo
     df = load_data(config.FEATURES_SURVIVAL_PATH)
     model = load_model(config.SURVIVAL_MODEL_PATH)

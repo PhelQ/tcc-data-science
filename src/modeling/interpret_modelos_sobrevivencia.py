@@ -16,15 +16,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def get_hazard_ratios(model, training_columns: list) -> pd.DataFrame:
     """Extrai e calcula os Hazard Ratios (Razões de Risco) do modelo CoxPH."""
-    # Use exp(coef) directly from summary, which IS the hazard ratio
-    # Do not overwrite index with training_columns to avoid potential mismatch
+    # Usa exp(coef) diretamente do resumo, que É a razão de risco (hazard ratio)
+    # Não sobrescreve o índice com training_columns para evitar possíveis desalinhamentos
     summary = model.summary.copy()
     
-    # Rename for clarity if needed, or just use exp(coef)
+    # Renomeia para clareza se necessário, ou apenas usa exp(coef)
     summary["Hazard Ratio"] = summary["exp(coef)"]
     
-    # Verify if indices roughly match expectation (optional, but good for debugging)
-    # logging.info(f"Features in model: {summary.index.tolist()[:5]}")
+    # Verifica se os índices batem aproximadamente com o esperado (opcional, mas bom para debug)
+    # logging.info(f"Features no modelo: {summary.index.tolist()[:5]}")
     
     return summary.sort_values(by="coef", key=abs, ascending=False)
 
@@ -46,7 +46,15 @@ def _clean_feature_names(feature_names: pd.Index) -> list:
             if new_name.startswith(prefix):
                 new_name = new_name.replace(prefix, "")
                 break
-        cleaned_names.append(new_name.replace("_", " ").title())
+        
+        # Substituição manual para garantir numerais romanos corretos
+        new_name = new_name.replace("_", " ")
+        new_name = new_name.replace("Stage IV", "Estágio IV")
+        new_name = new_name.replace("Stage III", "Estágio III")
+        new_name = new_name.replace("Stage II", "Estágio II")
+        new_name = new_name.replace("Stage I", "Estágio I")
+        
+        cleaned_names.append(new_name)
     return cleaned_names
 
 

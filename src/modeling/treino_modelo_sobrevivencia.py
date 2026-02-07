@@ -88,7 +88,7 @@ def get_models_config() -> dict:
             objective="survival:cox",
             random_state=42,
             eval_metric="cox-nloglik",
-            max_depth=3,            # Evita overfitting
+            max_depth=3,            # Evita sobreajuste (overfitting)
             learning_rate=0.05,     # Aprendizado mais lento e estável
             min_child_weight=5,     # Exige mais amostras para criar nó
             reg_alpha=0.5,          # Regularização L1
@@ -133,9 +133,9 @@ def evaluate_model(
     """Treina e avalia um único modelo (usado na validação cruzada)."""
     try:
         # Clona e treina
-        # Nota: Sklearn e XGBoost têm clone, mas CoxPHFitter não segue scikit-learn API estritamente
+        # Nota: Sklearn e XGBoost têm clone, mas CoxPHFitter não segue a API scikit-learn estritamente
         # Vamos assumir que recebemos uma instância nova ou reinicializável
-        # Como fit_model altera o estado, na CV precisamos garantir que não vazamos info.
+        # Como fit_model altera o estado, na CV precisamos garantir que não vazamos informação.
         # A função cross_validate_models instancia novos modelos ou usa clone se possível.
         # Aqui simplificamos: o chamador garante a instância limpa.
         
@@ -166,7 +166,7 @@ def cross_validate_models(X: pd.DataFrame, y: np.ndarray, cat_features: list) ->
             X_train_cv_raw, X_val_cv_raw = X.iloc[train_index], X.iloc[val_index]
             y_train_cv, y_val_cv = y[train_index], y[val_index]
             
-            # Feature Engineering isolado por fold (Evita Data Leakage)
+            # Feature Engineering isolado por fold (Evita Vazamento de Dados / Data Leakage)
             X_train_cv, X_val_cv = encode_features(X_train_cv_raw, X_val_cv_raw, cat_features)
             
             # Instancia novo modelo limpo

@@ -80,12 +80,46 @@ def create_event_and_time_vars(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def discretize_age(df: pd.DataFrame) -> pd.DataFrame:
-    """Discretizes age into bins."""
-    logging.info("Discretizing age into bins...")
+def discretize_age(df: pd.DataFrame) -> pd.DataFrame: 
+    """Discretiza a idade em faixas etárias."""
+    logging.info("Discretizando a idade em faixas...")
     age_bins = [0, 40, 50, 60, 70, 80, 100]
     age_labels = [f"age_{age_bins[i]}_{age_bins[i+1]}" for i in range(len(age_bins)-1)]
     df["age_group"] = pd.cut(df["age_at_index"], bins=age_bins, labels=age_labels, right=False)
+    return df
+
+def group_pathologic_stages(df: pd.DataFrame) -> pd.DataFrame:
+    """Agrupa estágios patológicos em categorias maiores e limpa dados inválidos."""
+    logging.info("Agrupando estágios patológicos...")
+    
+    # Mapeamento para simplificar os estágios (I, II, III, IV)
+    stage_map = {
+        'Stage I': 'Stage I', 'Stage IA': 'Stage I', 'Stage IB': 'Stage I',
+        'Stage II': 'Stage II', 'Stage IIA': 'Stage II', 'Stage IIB': 'Stage II', 'Stage IIC': 'Stage II',
+        'Stage III': 'Stage III', 'Stage IIIA': 'Stage III', 'Stage IIIB': 'Stage III', 'Stage IIIC': 'Stage III',
+        'Stage IV': 'Stage IV', 'Stage IVA': 'Stage IV', 'Stage IVB': 'Stage IV', 'Stage IVC': 'Stage IV'
+    }
+    
+    df["ajcc_pathologic_stage"] = df["ajcc_pathologic_stage"].map(stage_map)
+    
+    # Remover amostras que não puderam ser mapeadas (como o '--' ou nulos)
+    initial_len = len(df)
+    df = df.dropna(subset=["ajcc_pathologic_stage"])
+    logging.info(f"Removidas {initial_len - len(df)} amostras com estágio inválido ou nulo.")
+    
+    return df
+
+def clean_tissue_origin(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove categorias de origem do tecido com pouquíssimos eventos."""
+    logging.info("Limpando categorias de origem do tecido com poucos eventos...")
+    
+    # Categorias que vimos ter 0 ou quase 0 óbitos no diagnóstico
+    to_remove = ["Hepatic flexure of colon", "Splenic flexure of colon"]
+    
+    initial_len = len(df)
+    df = df[~df["tissue_or_organ_of_origin"].isin(to_remove)]
+    logging.info(f"Removidas {initial_len - len(df)} amostras de categorias esparsas de tecido.")
+    
     return df
 
 def translate_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -109,6 +143,8 @@ def main():
         .pipe(convert_to_numeric)
         .pipe(create_event_and_time_vars)
         .pipe(discretize_age)
+        .pipe(group_pathologic_stages)
+        .pipe(clean_tissue_origin)
     )
     
     df_final = df_survival[config.FINAL_SURVIVAL_FEATURES]

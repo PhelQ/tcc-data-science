@@ -1,11 +1,10 @@
 import logging
 import numpy as np
 import pandas as pd
-import shap
 import matplotlib.pyplot as plt
-from xgboost import XGBRegressor
-from xgboost import plot_importance
-from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from xgboost import XGBRegressor, plot_importance
+from sklearn.inspection import PartialDependenceDisplay
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import make_scorer
 from sksurv.metrics import concordance_index_censored
 
@@ -72,10 +71,10 @@ def explore_xgboost():
     test_score = concordance_index_censored(y_test["event"], y_test["time"], test_preds)[0]
     logging.info(f"Score Final no Teste (Hold-out): {test_score:.4f}")
     
-    # 7. Análise de Importância (Nativa XGBoost) - TRADUZIDO
-    logging.info("Gerando gráficos de importância nativos (Traduzidos)...")
+    # 7. Análise de Importância (Nativa XGBoost)
+    logging.info("Gerando gráficos de importância nativos...")
     
-    # Plot Weight
+    # Plot de Peso (Weight)
     fig, ax = plt.subplots(figsize=(12, 10))
     plot_importance(final_model, max_num_features=20, importance_type='weight', height=0.5, ax=ax)
     ax.set_title(f"Importância das Variáveis (Peso) - C-Index: {test_score:.3f}")
@@ -84,7 +83,7 @@ def explore_xgboost():
     plt.tight_layout()
     save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_pt.png")
     
-    # Plot Gain
+    # Plot de Ganho (Gain)
     fig, ax = plt.subplots(figsize=(12, 10))
     plot_importance(final_model, max_num_features=20, importance_type='gain', height=0.5, ax=ax)
     ax.set_title(f"Importância das Variáveis (Ganho de Informação) - C-Index: {test_score:.3f}")
@@ -93,41 +92,53 @@ def explore_xgboost():
     plt.tight_layout()
     save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_gain_pt.png")
 
-    # 8. SHAP (Tentativa com Fix de Compatibilidade)
-    logging.info("Tentando gerar SHAP values (com fix de compatibilidade)...")
+    # 8. Gráficos de Dependência Parcial (PDP)
+    logging.info("Gerando Gráficos de Dependência Parcial (PDP)...")
     try:
-        # Hack para compatibilidade XGBoost > 1.0 / SHAP
-        # O problema é que o TreeExplainer as vezes falha ao ler o base_score do modelo salvo
-        # Passar o booster diretamente ajuda
-        booster = final_model.get_booster()
+        # Selecionar as top 3 variáveis baseadas no ganho (gain)
+        importance_scores = final_model.get_booster().get_score(importance_type='gain')
+        top_3_features = sorted(importance_scores, key=importance_scores.get, reverse=True)[:3]
         
-        # Workaround específico para 'utf-8' error em algumas versões
-        model_bytearray = booster.save_raw()[4:]
-        def myfun(self=None, **kwargs):
-            return model_bytearray
-        booster.save_raw = myfun
+        logging.info(f"Variáveis selecionadas para PDP: {top_3_features}")
         
-        # Criar Explainer
-        explainer = shap.TreeExplainer(booster)
-        shap_values = explainer.shap_values(X_train)
+        # Criar uma função wrapper para prever em escala logarítmica (log-hazard)
+        # Isso evita que a escala exploda para 600.000 e permite ver a tendência real.
+        import xgboost as xgb
+        class XGBoostLogWrapper:
+            def __init__(self, model):
+                self.model = model
+                self._estimator_type = "regressor"
+                self.classes_ = []
+            def fit(self, X, y):
+                return self
+            def predict(self, X):
+                # Usando DMatrix para garantir compatibilidade com o booster
+                dmat = xgb.DMatrix(X)
+                return self.model.get_booster().predict(dmat, output_margin=True)
+
+        wrapped_model = XGBoostLogWrapper(final_model)
+
+        fig, ax = plt.subplots(1, 3, figsize=(18, 6)) # Criando 3 colunas explicitamente
+        display = PartialDependenceDisplay.from_estimator(
+            wrapped_model,
+            X_train,
+            features=top_3_features,
+            kind="both", 
+            subsample=100,
+            ax=ax,
+            percentiles=(0.05, 0.95)
+        )
         
-        # Summary Plot Traduzido
-        plt.figure(figsize=(12, 10))
-        shap.summary_plot(shap_values, X_train, show=False)
-        plt.title("Impacto das Variáveis na Sobrevivência (SHAP)")
-        plt.xlabel("Valor SHAP (Impacto na saída do modelo)")
-        # Traduzir a barra de cores (manual, difícil no summary_plot padrão, mas o título ajuda)
-        # O summary_plot padrão usa "Feature value: Low <-> High" em inglês.
-        # Podemos tentar sobrescrever o label do eixo X novamente por garantia
-        plt.xlabel("Valor SHAP (Impacto na Predição de Risco)")
-        
-        plt.tight_layout()
-        save_plot(plt.gcf(), config.FIGURES_DIR, "shap_summary_pt.png")
-        logging.info("SHAP gerado com sucesso!")
+        plt.suptitle("Impacto das Variáveis no Log-Risco (PDP/ICE)", fontsize=16, fontweight='bold')
+        for a in ax.flatten():
+            a.set_ylabel("Log-Hazard (Risco Relativo)")
+            
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        save_plot(fig, config.FIGURES_DIR, "dependencia_parcial_xgboost.png")
+        logging.info("Gráficos de PDP corrigidos e gerados com sucesso!")
         
     except Exception as e:
-        logging.error(f"Erro ao gerar SHAP: {e}")
-        logging.warning("Seguindo apenas com os plots nativos.")
+        logging.error(f"Erro ao gerar gráficos de PDP: {e}")
 
     logging.info("Exploração concluída! Confira os gráficos em reports/figures/")
     

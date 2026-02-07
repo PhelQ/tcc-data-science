@@ -1,6 +1,6 @@
 import logging
 
-from src.eda import eda_tcga_coad
+from src.aed import aed_tcga_coad
 from src.modeling import (
     interpret_modelos_sobrevivencia,
     predicao_tempodevida,
@@ -22,9 +22,9 @@ def main():
     logging.info("Etapa 1: Engenharia de Features")
     feature_engineering_survival.main()
 
-    # 2. Análise Exploratória de Dados (EDA)
+    # 2. Análise Exploratória de Dados (AED)
     logging.info("Etapa 2: Análise Exploratória de Dados")
-    eda_tcga_coad.main()
+    aed_tcga_coad.main()
 
     # 3. Treinamento e Avaliação de Modelos
     logging.info("Etapa 3: Treinamento e Avaliação de Modelos")
