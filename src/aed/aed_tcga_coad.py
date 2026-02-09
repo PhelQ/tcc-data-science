@@ -55,6 +55,86 @@ def plot_stage_distribution(df, output_dir):
     plt.grid(axis='x', linestyle='--', alpha=0.7)
     save_plot(plt.gcf(), output_dir, "distribuicao_estagios.png")
 
+def plot_tissue_origin_distribution(df, output_dir):
+    """Gera o gráfico de distribuição por localização anatômica do tumor."""
+    tissue_map = {
+        "Sigmoid colon": "Cólon Sigmoide",
+        "Ascending colon": "Cólon Ascendente",
+        "Colon, NOS": "Cólon (NOS)",
+        "Cecum": "Ceco",
+        "Transverse colon": "Cólon Transverso",
+        "Descending colon": "Cólon Descendente",
+        "Rectosigmoid junction": "Junção Retossigmoide",
+    }
+    plot_df = df.copy()
+    plot_df['localizacao'] = plot_df['tissue_or_organ_of_origin'].map(tissue_map)
+    order = plot_df['localizacao'].value_counts().index
+
+    plt.figure(figsize=(12, 7))
+    ax = sns.countplot(y='localizacao', data=plot_df, order=order, palette="viridis")
+    for container in ax.containers:
+        ax.bar_label(container, label_type='edge', padding=3)
+
+    plt.title('Distribuição por Localização Anatômica do Tumor')
+    plt.xlabel('Contagem')
+    plt.ylabel('Localização')
+    plt.grid(axis='x', linestyle='--', alpha=0.7)
+    save_plot(plt.gcf(), output_dir, "distribuicao_localizacao_anatomica.png")
+
+
+def plot_mortality_by_age_group(df, output_dir):
+    """Gera o gráfico de taxa de óbito por faixa etária."""
+    age_labels = {
+        "age_0_40": "0-40",
+        "age_40_50": "40-50",
+        "age_50_60": "50-60",
+        "age_60_70": "60-70",
+        "age_70_80": "70-80",
+        "age_80_100": "80-100",
+    }
+    stats = []
+    for grp in sorted(df['age_group'].unique()):
+        subset = df[df['age_group'] == grp]
+        n_total = len(subset)
+        n_obitos = subset['event_occurred'].sum()
+        stats.append({
+            'Faixa Etária': age_labels.get(str(grp), str(grp)),
+            'Total': n_total,
+            'Óbitos': n_obitos,
+            'Taxa de Óbito (%)': n_obitos / n_total * 100,
+        })
+    stats_df = pd.DataFrame(stats)
+
+    fig, ax1 = plt.subplots(figsize=(10, 7))
+
+    x = range(len(stats_df))
+    bars = ax1.bar(x, stats_df['Total'], color='#4c72b0', alpha=0.7, label='Total de Pacientes')
+    ax1.bar_label(bars, labels=[str(v) for v in stats_df['Total']], padding=3, fontsize=10)
+    ax1.set_xlabel('Faixa Etária', fontsize=12)
+    ax1.set_ylabel('Número de Pacientes', fontsize=12, color='#4c72b0')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(stats_df['Faixa Etária'])
+    ax1.tick_params(axis='y', labelcolor='#4c72b0')
+
+    ax2 = ax1.twinx()
+    line = ax2.plot(x, stats_df['Taxa de Óbito (%)'], color='#c44e52', marker='o',
+                    linewidth=2.5, markersize=8, label='Taxa de Óbito (%)')
+    for i, val in enumerate(stats_df['Taxa de Óbito (%)']):
+        ax2.annotate(f'{val:.1f}%', (i, val), textcoords="offset points",
+                     xytext=(0, 10), ha='center', fontsize=10, color='#c44e52', fontweight='bold')
+    ax2.set_ylabel('Taxa de Óbito (%)', fontsize=12, color='#c44e52')
+    ax2.tick_params(axis='y', labelcolor='#c44e52')
+    ax2.set_ylim(0, max(stats_df['Taxa de Óbito (%)']) * 1.3)
+
+    plt.title('Distribuição de Pacientes e Taxa de Óbito por Faixa Etária', fontsize=14, fontweight='bold')
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    ax1.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    save_plot(fig, output_dir, "taxa_obito_por_faixa_etaria.png")
+
+
 def plot_overall_survival(df, output_dir):
     """Plota a curva de sobrevivência Kaplan-Meier global."""
     kmf = KaplanMeierFitter()
@@ -105,6 +185,8 @@ def main():
         plot_age_distribution(df, config.FIGURES_DIR)
         plot_age_by_vital_status(df, config.FIGURES_DIR)
         plot_stage_distribution(df, config.FIGURES_DIR)
+        plot_tissue_origin_distribution(df, config.FIGURES_DIR)
+        plot_mortality_by_age_group(df, config.FIGURES_DIR)
         plot_overall_survival(df, config.FIGURES_DIR)
         plot_survival_by_stage(df, config.FIGURES_DIR)
 
