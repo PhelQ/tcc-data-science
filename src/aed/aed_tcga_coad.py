@@ -135,6 +135,29 @@ def plot_mortality_by_age_group(df, output_dir):
     save_plot(fig, output_dir, "taxa_obito_por_faixa_etaria.png")
 
 
+def plot_vital_status_distribution(df, output_dir):
+    """Gera o gráfico de distribuição do status vital (evento de óbito)."""
+    counts = df['event_occurred'].value_counts().sort_index()
+    labels = ['Vivo / Censurado', 'Falecido']
+    values = [counts.get(0, 0), counts.get(1, 0)]
+    total = sum(values)
+    pcts = [v / total * 100 for v in values]
+    colors = ['#2ecc71', '#e74c3c']
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bars = ax.bar(labels, values, color=colors, edgecolor='white', width=0.5)
+    for bar, val, pct in zip(bars, values, pcts):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 40,
+                f'{val}\n({pct:.1f}%)', ha='center', va='bottom', fontsize=14, fontweight='bold')
+
+    ax.set_ylabel('Número de Pacientes', fontsize=12)
+    ax.set_title(f'Distribuição do Status Vital (n={total})', fontsize=14, fontweight='bold')
+    ax.set_ylim(0, max(values) * 1.2)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    save_plot(fig, output_dir, "distribuicao_status_vital.png")
+
+
 def plot_overall_survival(df, output_dir):
     """Plota a curva de sobrevivência Kaplan-Meier global."""
     kmf = KaplanMeierFitter()
@@ -187,6 +210,7 @@ def main():
         plot_stage_distribution(df, config.FIGURES_DIR)
         plot_tissue_origin_distribution(df, config.FIGURES_DIR)
         plot_mortality_by_age_group(df, config.FIGURES_DIR)
+        plot_vital_status_distribution(df, config.FIGURES_DIR)
         plot_overall_survival(df, config.FIGURES_DIR)
         plot_survival_by_stage(df, config.FIGURES_DIR)
 
