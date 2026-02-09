@@ -158,6 +158,32 @@ def plot_vital_status_distribution(df, output_dir):
     save_plot(fig, output_dir, "distribuicao_status_vital.png")
 
 
+def plot_followup_time_distribution(df, output_dir):
+    """Gera histograma do tempo de acompanhamento por status vital."""
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    falecidos = df[df['event_occurred'] == 1]['observed_time']
+    censurados = df[df['event_occurred'] == 0]['observed_time']
+
+    ax.hist(censurados, bins=30, alpha=0.7, color='#2ecc71', label='Vivo / Censurado', edgecolor='white')
+    ax.hist(falecidos, bins=30, alpha=0.7, color='#e74c3c', label='Falecido', edgecolor='white')
+
+    med_cens = censurados.median()
+    med_falec = falecidos.median()
+    ax.axvline(med_cens, color='#27ae60', linestyle='--', linewidth=2,
+               label=f'Mediana Censurados: {med_cens:.2f} anos')
+    ax.axvline(med_falec, color='#c0392b', linestyle='--', linewidth=2,
+               label=f'Mediana Falecidos: {med_falec:.2f} anos')
+
+    ax.set_xlabel('Tempo de Observação (Anos)', fontsize=12)
+    ax.set_ylabel('Número de Pacientes', fontsize=12)
+    ax.set_title('Distribuição do Tempo de Acompanhamento por Status Vital', fontsize=14, fontweight='bold')
+    ax.legend(fontsize=10)
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    save_plot(fig, output_dir, "distribuicao_tempo_acompanhamento.png")
+
+
 def plot_overall_survival(df, output_dir):
     """Plota a curva de sobrevivência Kaplan-Meier global."""
     kmf = KaplanMeierFitter()
@@ -211,6 +237,7 @@ def main():
         plot_tissue_origin_distribution(df, config.FIGURES_DIR)
         plot_mortality_by_age_group(df, config.FIGURES_DIR)
         plot_vital_status_distribution(df, config.FIGURES_DIR)
+        plot_followup_time_distribution(df, config.FIGURES_DIR)
         plot_overall_survival(df, config.FIGURES_DIR)
         plot_survival_by_stage(df, config.FIGURES_DIR)
 
