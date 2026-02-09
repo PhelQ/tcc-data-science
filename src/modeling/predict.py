@@ -1,6 +1,8 @@
 """
-Este script carrega um modelo de sobrevivência CoxPH treinado e dados clínicos para prever
-o tempo mediano de sobrevivência para cada paciente. Os resultados são salvos em um arquivo CSV.
+Predição de Tempo de Sobrevivência.
+
+Carrega o melhor modelo treinado e realiza predições de tempo mediano
+de sobrevivência para cada paciente. Salva os resultados em CSV.
 """
 
 import logging
@@ -8,7 +10,7 @@ import logging
 import pandas as pd
 
 from src import config
-from src.modeling.treino_modelo_sobrevivencia import load_and_split_data
+from src.modeling.train import load_and_split_data
 from src.utils import load_data, load_model, save_data
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

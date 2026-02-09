@@ -1,3 +1,12 @@
+"""
+Interpretação do Modelo XGBoost Survival.
+
+Gera análises de explicabilidade:
+- Importância de variáveis (weight e gain)
+- Partial Dependence Plots (PDP)
+- Individual Conditional Expectation (ICE)
+"""
+
 import logging
 import numpy as np
 import pandas as pd
@@ -10,7 +19,7 @@ from sksurv.metrics import concordance_index_censored
 
 from src import config
 from src.utils import save_plot
-from src.modeling.treino_modelo_sobrevivencia import load_and_split_data, encode_features
+from src.modeling.train import load_and_split_data, encode_features
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 

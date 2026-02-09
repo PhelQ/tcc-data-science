@@ -2,9 +2,11 @@ import logging
 
 from src.aed import aed_tcga_coad
 from src.modeling import (
-    interpret_modelos_sobrevivencia,
-    predicao_tempodevida,
-    treino_modelo_sobrevivencia,
+    train,
+    interpret_cox,
+    interpret_xgboost,
+    interpret_rsf,
+    predict,
 )
 from src.visualization import visualize_survival_curves
 from src.data import feature_engineering_survival
@@ -27,16 +29,22 @@ def main():
     aed_tcga_coad.main()
 
     # 3. Treinamento e Avaliação de Modelos
-    logging.info("Etapa 3: Treinamento e Avaliação de Modelos")
-    treino_modelo_sobrevivencia.main()
+    logging.info("Etapa 3: Treinamento dos Modelos (Cox, RSF, XGBoost)")
+    train.main()
 
-    # 4. Interpretação do Modelo
-    logging.info("Etapa 4: Interpretação do Modelo")
-    interpret_modelos_sobrevivencia.main()
+    # 4. Interpretação dos Modelos
+    logging.info("Etapa 4: Interpretação do Modelo Cox (Hazard Ratios)")
+    interpret_cox.main()
+
+    logging.info("Etapa 4.1: Interpretação do XGBoost (Importance + PDP)")
+    interpret_xgboost.main()
+
+    logging.info("Etapa 4.2: Interpretação do RSF (Permutation + PDP)")
+    interpret_rsf.main()
 
     # 5. Previsão do Tempo de Sobrevivência
     logging.info("Etapa 5: Previsão do Tempo de Sobrevivência")
-    predicao_tempodevida.main()
+    predict.main()
 
     # 6. Visualização das Curvas de Sobrevivência
     logging.info("Etapa 6: Visualização das Curvas de Sobrevivência")

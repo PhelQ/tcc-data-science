@@ -1,5 +1,8 @@
 """
-Interpreta o modelo de sobrevivência CoxPH e visualiza os Hazard Ratios.
+Interpretação do Modelo Cox Proportional Hazards.
+
+Gera análise de Hazard Ratios (razões de risco) mostrando o impacto
+de cada variável na sobrevivência dos pacientes.
 """
 
 import logging

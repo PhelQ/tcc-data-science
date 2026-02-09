@@ -1,6 +1,12 @@
 """
-Treina e avalia múltiplos modelos de sobrevivência (CoxPH, RSF, XGBoost),
-gerando um relatório comparativo e salvando todos os artefatos.
+Treinamento e Avaliação de Modelos de Sobrevivência.
+
+Treina e compara 3 modelos de sobrevivência:
+- Cox Proportional Hazards (CoxPH) - Interpretabilidade
+- Random Survival Forest (RSF) - Performance
+- XGBoost Survival - Performance e eficiência
+
+Gera relatório comparativo com C-Index e salva todos os modelos treinados.
 """
 
 import logging
