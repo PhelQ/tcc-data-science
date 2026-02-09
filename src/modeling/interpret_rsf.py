@@ -97,7 +97,7 @@ def explore_rsf():
     )
     ax.invert_yaxis()
     plt.tight_layout()
-    save_plot(fig, config.FIGURES_DIR, "rsf_permutation_importance_pt.png")
+    save_plot(fig, config.FIGURES_DIR, "importancia_permutacao_rsf.png")
     logging.info("Gráfico de Permutation Importance salvo!")
 
     # 7. Partial Dependence Plots (PDP)

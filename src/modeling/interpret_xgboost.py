@@ -90,7 +90,7 @@ def explore_xgboost():
     ax.set_xlabel("F Score (Peso)")
     ax.set_ylabel("Variáveis")
     plt.tight_layout()
-    save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_pt.png")
+    save_plot(fig, config.FIGURES_DIR, "importancia_variaveis_peso_xgboost.png")
     
     # Plot de Ganho (Gain)
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -99,7 +99,7 @@ def explore_xgboost():
     ax.set_xlabel("Ganho Médio")
     ax.set_ylabel("Variáveis")
     plt.tight_layout()
-    save_plot(fig, config.FIGURES_DIR, "xgboost_native_importance_gain_pt.png")
+    save_plot(fig, config.FIGURES_DIR, "importancia_variaveis_ganho_xgboost.png")
 
     # 8. Gráficos de Dependência Parcial (PDP)
     logging.info("Gerando Gráficos de Dependência Parcial (PDP)...")

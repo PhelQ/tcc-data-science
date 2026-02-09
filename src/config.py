@@ -66,7 +66,7 @@ PREDICTED_SURVIVAL_TIME_PATH = os.path.join(
     REPORTS_DIR, 'predicted_survival_time.csv'
 )
 COX_HAZARD_RATIOS_PATH = os.path.join(
-    FIGURES_DIR, 'cox_model_hazard_ratios.png'
+    FIGURES_DIR, 'razoes_risco_cox.png'
 )
 
 # Mapeamento de colunas para a engenharia de features de sobrevivência

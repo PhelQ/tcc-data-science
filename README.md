@@ -101,9 +101,10 @@ O projeto segue um pipeline modular e reprodutível:
 ├── reports/                 # Relatórios e visualizações
 │   ├── figures/             # Gráficos gerados (PNG)
 │   │   ├── razoes_risco_cox.png
-│   │   ├── xgboost_native_importance_pt.png
+│   │   ├── importancia_variaveis_peso_xgboost.png
+│   │   ├── importancia_variaveis_ganho_xgboost.png
 │   │   ├── dependencia_parcial_xgboost.png
-│   │   ├── rsf_permutation_importance_pt.png
+│   │   ├── importancia_permutacao_rsf.png
 │   │   └── dependencia_parcial_rsf.png
 │   └── model_comparison_results.csv
 ├── src/                     # Código fonte
