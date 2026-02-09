@@ -23,16 +23,6 @@ def plot_age_distribution(df, output_dir):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     save_plot(plt.gcf(), output_dir, "distribuicao_idade.png")
 
-def plot_age_by_vital_status(df, output_dir):
-    """Gera o boxplot de idade por status vital."""
-    plt.figure(figsize=(8, 6))
-    sns.boxplot(x='vital_status', y='age_at_index', data=df, palette='Set2')
-    plt.title('Distribuição de Idade por Status Vital')
-    plt.xlabel('Status Vital')
-    plt.ylabel('Idade no Diagnóstico')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    save_plot(plt.gcf(), output_dir, "distribuicao_idade_por_status_vital.png")
-
 def plot_stage_distribution(df, output_dir):
     """Gera o gráfico de contagem para os estágios patológicos (AJCC)."""
     # Limpeza de dados para visualização
@@ -232,7 +222,6 @@ def main():
 
         # Gerar gráficos
         plot_age_distribution(df, config.FIGURES_DIR)
-        plot_age_by_vital_status(df, config.FIGURES_DIR)
         plot_stage_distribution(df, config.FIGURES_DIR)
         plot_tissue_origin_distribution(df, config.FIGURES_DIR)
         plot_mortality_by_age_group(df, config.FIGURES_DIR)
