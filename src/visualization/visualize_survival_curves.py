@@ -35,7 +35,11 @@ def plot_survival_by_risk_group(df: pd.DataFrame, figures_dir: str):
     logging.info("Gerando curvas de sobrevivência por grupos de risco previstos pelo modelo...")
     
     fig, ax = plt.subplots(figsize=(12, 8))
-    colors = {"baixo": "#2ca02c", "médio": "#ff7f0e", "alto": "#d62728"}
+    colors = {
+        "baixo": config.PALETTE['risk_low'],
+        "médio": config.PALETTE['risk_medium'],
+        "alto": config.PALETTE['risk_high'],
+    }
 
     # A FutureWarning é esperada aqui e será tratada em versões futuras do pandas
     for group, data in df.groupby("risk_group"):

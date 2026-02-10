@@ -83,7 +83,7 @@ def plot_hazard_ratios(hazard_ratios: pd.DataFrame, output_path: str) -> None:
         x="Hazard Ratio",
         y="Feature Name",
         hue="Tipo de Efeito",
-        palette={"Fator de Risco (Piora)": "#e74c3c", "Fator Protetor (Melhora)": "#2ecc71"},
+        palette={"Fator de Risco (Piora)": config.PALETTE['dead'], "Fator Protetor (Melhora)": config.PALETTE['alive']},
         ax=ax,
         dodge=False 
     )

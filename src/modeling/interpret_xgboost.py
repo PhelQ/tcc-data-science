@@ -85,7 +85,8 @@ def explore_xgboost():
     
     # Plot de Peso (Weight)
     fig, ax = plt.subplots(figsize=(12, 10))
-    plot_importance(final_model, max_num_features=20, importance_type='weight', height=0.5, ax=ax)
+    plot_importance(final_model, max_num_features=20, importance_type='weight',
+                    height=0.5, ax=ax, color=config.PALETTE['primary'])
     ax.set_title(f"Importância das Variáveis (Peso) - C-Index: {test_score:.3f}")
     ax.set_xlabel("F Score (Peso)")
     ax.set_ylabel("Variáveis")
@@ -94,7 +95,8 @@ def explore_xgboost():
     
     # Plot de Ganho (Gain)
     fig, ax = plt.subplots(figsize=(12, 10))
-    plot_importance(final_model, max_num_features=20, importance_type='gain', height=0.5, ax=ax)
+    plot_importance(final_model, max_num_features=20, importance_type='gain',
+                    height=0.5, ax=ax, color=config.PALETTE['primary'])
     ax.set_title(f"Importância das Variáveis (Ganho de Informação) - C-Index: {test_score:.3f}")
     ax.set_xlabel("Ganho Médio")
     ax.set_ylabel("Variáveis")
@@ -132,10 +134,12 @@ def explore_xgboost():
             wrapped_model,
             X_train,
             features=top_3_features,
-            kind="both", 
+            kind="both",
             subsample=100,
             ax=ax,
-            percentiles=(0.05, 0.95)
+            percentiles=(0.05, 0.95),
+            pd_line_kw={'color': config.PALETTE['primary'], 'linewidth': 2.5},
+            ice_lines_kw={'color': config.PALETTE['primary'], 'alpha': 0.08, 'linewidth': 0.5},
         )
         
         plt.suptitle("Impacto das Variáveis no Log-Risco (PDP/ICE)", fontsize=16, fontweight='bold')

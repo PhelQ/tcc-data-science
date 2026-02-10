@@ -88,3 +88,38 @@ FINAL_SURVIVAL_FEATURES = [
     "ajcc_pathologic_stage",
     "tissue_or_organ_of_origin",
 ]
+
+# ============================================================
+# Paleta de Cores Padronizada do Projeto
+# ============================================================
+PALETTE = {
+    # --- Cores Semânticas (significado fixo em todo o projeto) ---
+    'alive': '#3498DB',          # Azul — Vivo / Censurado / Protetor
+    'dead': '#E74C3C',           # Vermelho — Falecido / Evento / Risco
+    'alive_dark': '#2471A3',     # Azul escuro — medianas, linhas de destaque
+    'dead_dark': '#C0392B',      # Vermelho escuro — medianas, linhas de destaque
+
+    # --- Cor Primária (barras neutras, histogramas gerais) ---
+    'primary': '#2C6FAC',
+
+    # --- Grupos de Risco (prognóstico: bom → ruim) ---
+    'risk_low': '#27AE60',       # Verde
+    'risk_medium': '#F39C12',    # Âmbar
+    'risk_high': '#E74C3C',      # Vermelho
+
+    # --- Estágios Patológicos (I→IV: progressão de severidade) ---
+    'stages': ['#3498DB', '#2ECC71', '#F39C12', '#E74C3C'],
+    'stage_labels': ['Stage I', 'Stage II', 'Stage III', 'Stage IV'],
+
+    # --- Paleta Categórica Geral (localizações, faixas etárias etc.) ---
+    'categorical': [
+        '#2C6FAC', '#27AE60', '#E67E22', '#9B59B6',
+        '#1ABC9C', '#34495E', '#E74C3C',
+    ],
+
+    # --- Acento (taxa de óbito, destaques secundários) ---
+    'accent': '#E67E22',
+
+    # --- Neutro (elementos não reportados, faltantes) ---
+    'neutral': '#95A5A6',
+}

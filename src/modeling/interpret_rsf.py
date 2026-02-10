@@ -85,7 +85,7 @@ def explore_rsf():
         feature_importance_perm['feature'],
         feature_importance_perm['importance_mean'],
         xerr=feature_importance_perm['importance_std'],
-        color='teal',
+        color=config.PALETTE['primary'],
         alpha=0.8
     )
     ax.set_xlabel("Importância (Permutation Importance)", fontsize=12)
@@ -132,7 +132,9 @@ def explore_rsf():
             subsample=100,
             ax=ax,
             percentiles=(0.05, 0.95),
-            random_state=42
+            random_state=42,
+            pd_line_kw={'color': config.PALETTE['primary'], 'linewidth': 2.5},
+            ice_lines_kw={'color': config.PALETTE['primary'], 'alpha': 0.08, 'linewidth': 0.5},
         )
 
         plt.suptitle(

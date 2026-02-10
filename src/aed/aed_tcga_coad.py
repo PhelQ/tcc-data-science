@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def plot_age_distribution(df, output_dir):
     """Gera o histograma da distribuição de idade."""
     plt.figure(figsize=(10, 6))
-    sns.histplot(df['age_at_index'], kde=True, bins=30, color='skyblue')
+    sns.histplot(df['age_at_index'], kde=True, bins=30, color=config.PALETTE['primary'])
     plt.title('Distribuição de Idade dos Pacientes')
     plt.xlabel('Idade no Diagnóstico')
     plt.ylabel('Frequência')
@@ -32,8 +32,13 @@ def plot_stage_distribution(df, output_dir):
     # Ordenar estágios naturalmente se possível, caso contrário por contagem
     order = plot_df['ajcc_pathologic_stage'].value_counts().index
 
+    # Mapear cada estágio para sua cor semântica
+    stage_color_map = dict(zip(config.PALETTE['stage_labels'], config.PALETTE['stages']))
+    stage_color_map['Não Reportado'] = config.PALETTE['neutral']
+    palette = [stage_color_map.get(s, config.PALETTE['neutral']) for s in order]
+
     plt.figure(figsize=(12, 7))
-    ax = sns.countplot(y='ajcc_pathologic_stage', data=plot_df, order=order, palette="viridis")
+    ax = sns.countplot(y='ajcc_pathologic_stage', data=plot_df, order=order, palette=palette)
     
     # Adicionar rótulos nas barras
     for container in ax.containers:
@@ -60,8 +65,9 @@ def plot_tissue_origin_distribution(df, output_dir):
     plot_df['localizacao'] = plot_df['tissue_or_organ_of_origin'].map(tissue_map)
     order = plot_df['localizacao'].value_counts().index
 
+    palette = config.PALETTE['categorical'][:len(order)]
     plt.figure(figsize=(12, 7))
-    ax = sns.countplot(y='localizacao', data=plot_df, order=order, palette="viridis")
+    ax = sns.countplot(y='localizacao', data=plot_df, order=order, palette=palette)
     for container in ax.containers:
         ax.bar_label(container, label_type='edge', padding=3)
 
@@ -98,22 +104,22 @@ def plot_mortality_by_age_group(df, output_dir):
     fig, ax1 = plt.subplots(figsize=(10, 7))
 
     x = range(len(stats_df))
-    bars = ax1.bar(x, stats_df['Total'], color='#4c72b0', alpha=0.7, label='Total de Pacientes')
+    bars = ax1.bar(x, stats_df['Total'], color=config.PALETTE['primary'], alpha=0.7, label='Total de Pacientes')
     ax1.bar_label(bars, labels=[str(v) for v in stats_df['Total']], padding=3, fontsize=10)
     ax1.set_xlabel('Faixa Etária', fontsize=12)
-    ax1.set_ylabel('Número de Pacientes', fontsize=12, color='#4c72b0')
+    ax1.set_ylabel('Número de Pacientes', fontsize=12, color=config.PALETTE['primary'])
     ax1.set_xticks(x)
     ax1.set_xticklabels(stats_df['Faixa Etária'])
-    ax1.tick_params(axis='y', labelcolor='#4c72b0')
+    ax1.tick_params(axis='y', labelcolor=config.PALETTE['primary'])
 
     ax2 = ax1.twinx()
-    line = ax2.plot(x, stats_df['Taxa de Óbito (%)'], color='#c44e52', marker='o',
+    line = ax2.plot(x, stats_df['Taxa de Óbito (%)'], color=config.PALETTE['dead'], marker='o',
                     linewidth=2.5, markersize=8, label='Taxa de Óbito (%)')
     for i, val in enumerate(stats_df['Taxa de Óbito (%)']):
         ax2.annotate(f'{val:.1f}%', (i, val), textcoords="offset points",
-                     xytext=(0, 10), ha='center', fontsize=10, color='#c44e52', fontweight='bold')
-    ax2.set_ylabel('Taxa de Óbito (%)', fontsize=12, color='#c44e52')
-    ax2.tick_params(axis='y', labelcolor='#c44e52')
+                     xytext=(0, 10), ha='center', fontsize=10, color=config.PALETTE['dead'], fontweight='bold')
+    ax2.set_ylabel('Taxa de Óbito (%)', fontsize=12, color=config.PALETTE['dead'])
+    ax2.tick_params(axis='y', labelcolor=config.PALETTE['dead'])
     ax2.set_ylim(0, max(stats_df['Taxa de Óbito (%)']) * 1.3)
 
     plt.title('Distribuição de Pacientes e Taxa de Óbito por Faixa Etária', fontsize=14, fontweight='bold')
@@ -132,7 +138,7 @@ def plot_vital_status_distribution(df, output_dir):
     values = [counts.get(0, 0), counts.get(1, 0)]
     total = sum(values)
     pcts = [v / total * 100 for v in values]
-    colors = ['#2ecc71', '#e74c3c']
+    colors = [config.PALETTE['alive'], config.PALETTE['dead']]
 
     fig, ax = plt.subplots(figsize=(8, 6))
     bars = ax.bar(labels, values, color=colors, edgecolor='white', width=0.5)
@@ -155,14 +161,14 @@ def plot_followup_time_distribution(df, output_dir):
     falecidos = df[df['event_occurred'] == 1]['observed_time']
     censurados = df[df['event_occurred'] == 0]['observed_time']
 
-    ax.hist(censurados, bins=30, alpha=0.7, color='#2ecc71', label='Vivo / Censurado', edgecolor='white')
-    ax.hist(falecidos, bins=30, alpha=0.7, color='#e74c3c', label='Falecido', edgecolor='white')
+    ax.hist(censurados, bins=30, alpha=0.7, color=config.PALETTE['alive'], label='Vivo / Censurado', edgecolor='white')
+    ax.hist(falecidos, bins=30, alpha=0.7, color=config.PALETTE['dead'], label='Falecido', edgecolor='white')
 
     med_cens = censurados.median()
     med_falec = falecidos.median()
-    ax.axvline(med_cens, color='#27ae60', linestyle='--', linewidth=2,
+    ax.axvline(med_cens, color=config.PALETTE['alive_dark'], linestyle='--', linewidth=2,
                label=f'Mediana Censurados: {med_cens:.2f} anos')
-    ax.axvline(med_falec, color='#c0392b', linestyle='--', linewidth=2,
+    ax.axvline(med_falec, color=config.PALETTE['dead_dark'], linestyle='--', linewidth=2,
                label=f'Mediana Falecidos: {med_falec:.2f} anos')
 
     ax.set_xlabel('Tempo de Observação (Anos)', fontsize=12)
@@ -178,9 +184,9 @@ def plot_overall_survival(df, output_dir):
     """Plota a curva de sobrevivência Kaplan-Meier global."""
     kmf = KaplanMeierFitter()
     kmf.fit(df['observed_time'], event_observed=df['event_occurred'], label='Coorte Global')
-    
+
     plt.figure(figsize=(10, 6))
-    kmf.plot(ci_show=True, linewidth=2)
+    kmf.plot(ci_show=True, linewidth=2, color=config.PALETTE['primary'])
     plt.title('Sobrevivência Global (Kaplan-Meier)')
     plt.xlabel('Tempo (Anos)')
     plt.ylabel('Probabilidade de Sobrevivência')
@@ -196,12 +202,14 @@ def plot_survival_by_stage(df, output_dir):
     plot_df = df.copy()
     plot_df['ajcc_pathologic_stage'] = plot_df['ajcc_pathologic_stage'].replace("'--", "Não Reportado")
 
+    stage_color_map = dict(zip(config.PALETTE['stage_labels'], config.PALETTE['stages']))
+
     for stage, grouped_df in plot_df.groupby('ajcc_pathologic_stage'):
         # Filtrar grupos muito pequenos para evitar poluição visual
         if len(grouped_df) > 10:
             kmf = KaplanMeierFitter()
             kmf.fit(grouped_df['observed_time'], grouped_df['event_occurred'], label=stage)
-            kmf.plot(ax=ax, ci_show=False)
+            kmf.plot(ax=ax, ci_show=False, color=stage_color_map.get(stage, config.PALETTE['neutral']))
 
     plt.title('Probabilidade de Sobrevivência por Estágio Patológico (AJCC)')
     plt.xlabel('Tempo (Anos)')
