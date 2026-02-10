@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from xgboost import XGBRegressor, plot_importance
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import make_scorer
 from sksurv.metrics import concordance_index_censored
 
 from src import config
@@ -23,17 +22,6 @@ from src.modeling.train import load_and_split_data, encode_features
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def c_index_scorer(estimator, X, y):
-    """Scorer customizado para RandomizedSearchCV (C-Index)."""
-    y_pred = estimator.predict(X)
-    try:
-        event = y["event"]
-        time = y["time"]
-    except:
-        event = y["event"]
-        time = y["time"]
-        
-    return concordance_index_censored(event, time, y_pred)[0]
 
 def explore_xgboost():
     logging.info("--- Iniciando Sessão de Exploração do XGBoost ---")
@@ -53,7 +41,7 @@ def explore_xgboost():
     # Preparar y para XGBoost
     y_train_xgb = np.where(y_train["event"], y_train["time"], -y_train["time"])
     
-    # 4. Melhores Parâmetros
+    # 4. Hiperparâmetros (mesmos do train.py get_models_config)
     best_params = {
         'max_depth': 10,
         'learning_rate': 0.05,

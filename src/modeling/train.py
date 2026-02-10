@@ -92,13 +92,17 @@ def get_models_config() -> dict:
         ),
         "XGBoostSurvival": XGBRegressor(
             objective="survival:cox",
-            random_state=42,
             eval_metric="cox-nloglik",
-            max_depth=3,            # Evita sobreajuste (overfitting)
-            learning_rate=0.05,     # Aprendizado mais lento e estável
-            min_child_weight=5,     # Exige mais amostras para criar nó
-            reg_alpha=0.5,          # Regularização L1
-            reg_lambda=0.5          # Regularização L2
+            random_state=42,
+            max_depth=10,
+            learning_rate=0.05,
+            n_estimators=200,
+            min_child_weight=1,
+            gamma=0.2,
+            subsample=0.8,
+            colsample_bytree=1.0,
+            reg_alpha=0,
+            reg_lambda=0.1,
         ),
     }
 
