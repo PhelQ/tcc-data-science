@@ -84,7 +84,6 @@ FINAL_SURVIVAL_FEATURES = [
     "event_occurred",
     "observed_time",
     "age_at_index",
-    "age_group",
     "ajcc_pathologic_stage",
     "tissue_or_organ_of_origin",
 ]
