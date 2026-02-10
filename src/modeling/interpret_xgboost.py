@@ -41,7 +41,7 @@ def explore_xgboost():
     # Preparar y para XGBoost
     y_train_xgb = np.where(y_train["event"], y_train["time"], -y_train["time"])
     
-    # 4. Hiperparâmetros (mesmos do train.py get_models_config)
+    # 4. Hiperparâmetros 
     best_params = {
         'max_depth': 10,
         'learning_rate': 0.05,
