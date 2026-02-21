@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(python3 -m pip list:*)",
+      "Bash(where:*)",
+      "Bash(python -m pip:*)",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\pasqu\\\\ /b 2>&1\")",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\pasqu /b\")",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\pasqu\")",
+      "Bash(cmd /c dir:*)",
+      "Bash(Get-Command python)",
+      "Bash(C:/Users/pasqu/AppData/Local/Programs/Python/Python312/python.exe:*)",
+      "Bash(C:/Users/pasqu/AppData/Local/Programs/Python/Python311/python.exe:*)",
+      "Bash(C:/Users/pasqu/AppData/Local/Programs/Python/Python310/python.exe:*)",
+      "Bash(C:/Python312/python.exe:*)",
+      "Bash(C:/Python311/python.exe:*)",
+      "Bash(C:/Python310/python.exe:*)",
+      "Bash(py -3:*)",
+      "Bash(py:*)",
+      "Bash(echo:*)",
+      "Bash(reg query:*)",
+      "Bash(\"C:/Program Files/Git/usr/bin/bash.exe\" -c \"which python3 2>/dev/null || which python 2>/dev/null || echo nao_encontrado\")",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
